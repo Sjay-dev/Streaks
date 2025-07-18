@@ -1,8 +1,11 @@
 package com.example.streaks.View
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,12 +45,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import com.example.streaks.R
+import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -58,9 +64,14 @@ class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
+
         setContent {
-            scaffoldScreen()
+
+                scaffoldScreen()
+
         }
+
     }
 }
 
@@ -68,18 +79,17 @@ class HomeScreenActivity : ComponentActivity() {
 @Composable
 fun scaffoldScreen(){
 
+    val systemUiController = rememberSystemUiController()
+
+        systemUiController.setSystemBarsColor(
+            Color.Transparent ,
+            darkIcons = true
+        )
+
     val userName = "Sj"
     var greetings by remember { mutableStateOf("") }
 
-    val systemUiController = rememberSystemUiController()
-
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.White,
-            darkIcons = true
-        )
-    }
+    val context = LocalContext.current
 
         LaunchedEffect(Unit) {
         while (true) {
@@ -128,7 +138,9 @@ fun scaffoldScreen(){
 
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {   },
+                onClick = {
+                 context.startActivity(Intent(context, CreateStreakActivity::class.java))
+                },
                 containerColor = Color.Blue,
                 contentColor = Color.White,
                 shape = CircleShape ,
