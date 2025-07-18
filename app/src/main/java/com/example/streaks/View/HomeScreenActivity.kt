@@ -1,6 +1,7 @@
 package com.example.streaks.View
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,20 +48,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.streaks.R
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 
-class HomeScreenActivity : AppCompatActivity() {
+class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
         setContent {
-
-
+            scaffoldScreen()
         }
     }
 }
@@ -70,7 +71,17 @@ fun scaffoldScreen(){
     val userName = "Sj"
     var greetings by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    val systemUiController = rememberSystemUiController()
+
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.White,
+            darkIcons = true
+        )
+    }
+
+        LaunchedEffect(Unit) {
         while (true) {
             val timeNow = LocalTime.now().hour
             greetings = when (timeNow) {
@@ -86,7 +97,8 @@ fun scaffoldScreen(){
     Scaffold(
         topBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.statusBarsPadding()
+                    .fillMaxWidth(),
                 color = Color.White,
                 tonalElevation = 15.dp
 
@@ -180,7 +192,8 @@ fun scaffoldScreen(){
 
     ) { paddingValues ->
 
-        HomeScreen(paddingValues)}
+        HomeScreen(paddingValues)
+    }
 
 }
 
