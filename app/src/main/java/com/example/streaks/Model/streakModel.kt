@@ -1,16 +1,18 @@
 package com.example.streaks.Model
 
 import androidx.compose.ui.graphics.Color
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+
 import java.time.LocalDate
 
-data class streakData(
+@Entity(tableName = "Streaks")
+@TypeConverters(Converters::class)
+
+ data class streakModel(
+    @PrimaryKey(autoGenerate = true)
     val streakId : Int,
 
     val streakName: String,
@@ -28,5 +30,28 @@ data class streakData(
 enum class Frequency{
     DAILY , WEEKLY , MONTHLY
 }
+
+
+class Converters {
+
+    @TypeConverter
+    fun fromColor(color: Color): Long = color.value.toLong()
+
+    @TypeConverter
+    fun toColor(value: Long): Color = Color(value)
+
+    @TypeConverter
+    fun fromFrequency(value: String): Frequency = Frequency.valueOf(value)
+
+    @TypeConverter
+    fun frequencyToString(frequency: Frequency): String = frequency.name
+
+    @TypeConverter
+    fun fromLocalDate(date: String): LocalDate = LocalDate.parse(date)
+
+    @TypeConverter
+    fun localDateToString(date: LocalDate): String = date.toString()
+}
+
 
 
