@@ -11,7 +11,7 @@ import java.time.LocalDate
 @Entity(tableName = "Streaks")
 @TypeConverters(Converters::class)
 
- data class streakModel(
+ data class StreakModel(
     @PrimaryKey(autoGenerate = true)
     val streakId : Int,
 
