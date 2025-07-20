@@ -24,3 +24,5 @@ class StreakRepository(private val dao: StreakDao) {
         return dao.getStreakById(id)
     }
 }
+
+

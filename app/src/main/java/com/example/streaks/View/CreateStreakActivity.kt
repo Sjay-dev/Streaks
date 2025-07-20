@@ -75,6 +75,8 @@ CreateStreakScreen()
     }
 }
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateStreakScreen(){
@@ -89,7 +91,6 @@ fun CreateStreakScreen(){
 
     var streakName by remember { mutableStateOf("") }
     var streakColor by remember { mutableStateOf(Color.Blue) }
-    var frequency by remember { mutableStateOf("") }
 
     // Start date state
     var showStartDatePicker by remember { mutableStateOf(true) }

@@ -12,6 +12,8 @@ import com.example.streaks.Model.StreakModel
 @TypeConverters(Converters::class)
 abstract class StreakDataBase : RoomDatabase() {
 
+
+
     abstract fun streakDao(): StreakDao
 
     companion object {
