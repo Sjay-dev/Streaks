@@ -1,9 +1,11 @@
 package com.example.streaks.Model
 
 import com.example.streaks.Model.DataBase.StreakDao
+import javax.inject.Inject
 
-class StreakRepository(private val dao: StreakDao) {
-
+class StreakRepository @Inject constructor(
+    private val dao: StreakDao
+) {
     suspend fun insertStreak(streak: StreakModel) {
         dao.addStreak(streak)
     }

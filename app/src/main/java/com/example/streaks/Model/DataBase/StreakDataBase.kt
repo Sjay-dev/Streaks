@@ -13,7 +13,6 @@ import com.example.streaks.Model.StreakModel
 abstract class StreakDataBase : RoomDatabase() {
 
 
-
     abstract fun streakDao(): StreakDao
 
     companion object {

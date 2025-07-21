@@ -53,8 +53,6 @@ class StreakViewModel @Inject constructor
         }
     }
 
-
-
     fun getStreakById(id: Int, callback: (StreakModel?) -> Unit) {
         viewModelScope.launch {
             callback(repository.getStreakById(id))
