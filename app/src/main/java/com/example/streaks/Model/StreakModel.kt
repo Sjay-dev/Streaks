@@ -17,7 +17,7 @@ import java.time.LocalDate
 
     val streakName: String,
 
-    val color: Color,
+    val color: Long,
 
     val frequency : Frequency,
 

@@ -68,8 +68,10 @@ dependencies {
 
     implementation("com.google.dagger:hilt-android:2.51")
     kapt("com.google.dagger:hilt-compiler:2.51")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+
+    implementation(libs.androidx.room.runtime.android)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 
 
     // Hilt for Jetpack Compose ViewModel
