@@ -27,3 +27,5 @@ interface StreakDao {
     @Query("SELECT * FROM streaks WHERE streakId = :id")
     suspend fun getStreakById(id: Int): StreakModel?
 }
+
+
