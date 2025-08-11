@@ -63,16 +63,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalTime
 
+@AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -254,9 +258,9 @@ val streaks by viewModel.streaks.collectAsState()
             ) {
 
                 LazyColumn {
-                    items(streaks){streak->
+                    items(streaks) {streak->
 
-
+                            Streaks(streak)
                     }
                 }
             }
@@ -266,9 +270,7 @@ val streaks by viewModel.streaks.collectAsState()
 
 
 @Composable
-fun Streaks(streak : StreakModel){
-
-    Log.d("OMO", "Loaded color value: ${streak.color}")
+fun Streaks(streak : StreakModel) {
 
     Surface(color = Color.White ,
         shape = RoundedCornerShape(10.dp),
@@ -297,40 +299,33 @@ fun Streaks(streak : StreakModel){
                         fontSize = 25.sp
                     )
 
-//                    Text(
-//                        viewModel.nextCount(streak),
-//                        Modifier.padding(bottom = 12.dp),
-//                        fontSize = 15.sp,
-//                        color = Color.Gray
-//                    )
+                    Text(
+                        "2",
+                        Modifier.padding(bottom = 12.dp),
+                        fontSize = 15.sp,
+                        color = Color.Gray
+                    )
                 }
 
-//                Box(
-//                    modifier = Modifier.size(55.dp)
-//                        .clip(shape = CircleShape)
-//                        .border(width = 3.dp, color = streak.color , shape = CircleShape),
-//                    Alignment.Center
-//                ) {
-//                    Text(
-//                       " viewModel.calculateStreakCount(streak).toString()",
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 22.sp,
-//                        color = streak.color
-//                    )
+                Box(
+                    modifier = Modifier.size(55.dp)
+                        .clip(shape = CircleShape)
+                        .border(width = 3.dp, color = streak.color , shape = CircleShape),
+                    Alignment.Center
+                ) {
+                    Text(
+                        "3",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = streak.color
+                    )
                 }
             }
         }
     }
-
-
-
-
-
-@Preview
-@Composable
-fun previewScaffold(){
-    scaffoldScreen()
 }
+
+
 
 
 

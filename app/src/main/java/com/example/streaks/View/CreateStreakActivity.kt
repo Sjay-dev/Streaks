@@ -58,13 +58,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.streaks.Model.Frequency
+import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
+import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dagger.hilt.android.AndroidEntryPoint
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
 
+@AndroidEntryPoint
 class CreateStreakActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,9 +97,13 @@ fun CreateStreakScreen(){
         darkIcons = true
     )
 
+    //VIEWMODEL//
+    val viewModel : StreakViewModel = hiltViewModel()
+
 
     var streakName by remember { mutableStateOf("") }
     var streakColor by remember { mutableStateOf(Color.Blue) }
+    var frequency by remember { mutableStateOf(Frequency.DAILY) }
 
     // Start date state
     var showStartDatePicker by remember { mutableStateOf(true) }
@@ -118,6 +131,8 @@ fun CreateStreakScreen(){
 
     // UI data
     val presetColors = listOf(Color.Red, Color.Blue, Color.Yellow, Color.Black, Color.Green, Color.Magenta)
+
+    val frequencyOptions = Frequency.values()
 
 
     // Scaffold for consistent layout structure
@@ -200,6 +215,18 @@ fun CreateStreakScreen(){
                 Text("Frequency", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.size(5.dp))
                 Row(modifier = Modifier.fillMaxWidth()) {
+                    frequencyOptions.forEach { option ->
+                        Button(
+                            onClick = { frequency = option },
+                            modifier = Modifier.padding(end = 10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (frequency == option) Color.Blue else Color.LightGray,
+                                contentColor = if (frequency == option) Color.White else Color.Black
+                            )
+                        ) {
+                            Text(option.name.lowercase().replaceFirstChar { it.uppercase() })
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.size(15.dp))
@@ -276,6 +303,8 @@ fun CreateStreakScreen(){
                                 )
                             )
                         )
+
+
 
                         Spacer(modifier = Modifier.size(10.dp))
 
@@ -401,7 +430,17 @@ fun CreateStreakScreen(){
 
                 // === CREATE BUTTON ===
                 Button(
-                    onClick = {},
+                    onClick = {
+                            viewModel.addStreak(
+                                StreakModel(
+                                    streakName = streakName,
+                                    colorValue = streakColor.value.toLong(),
+                                    frequency = frequency ,
+                                    startDate = startDate,
+                                    endDate = endDate
+                                )
+                            )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
