@@ -17,7 +17,6 @@ data class StreakModel(
 
     val streakName: String = "",
 
-    // Store as Long in DB
     val colorValue: Long = Color.Blue.value.toLong(),
 
     val frequency: Frequency = Frequency.DAILY,
@@ -27,30 +26,7 @@ data class StreakModel(
     val endDate: LocalDate = LocalDate.now().plusDays(30),
 
     val count: Int = 0
-) {
-    // Convert to Color when needed in UI
-    val color: Color get() = Color(colorValue)
-
-    companion object {
-        fun fromUi(
-            streakId: Int = 0,
-            streakName: String = "",
-            color: Color = Color.Blue,
-            frequency: Frequency = Frequency.DAILY,
-            startDate: LocalDate = LocalDate.now(),
-            endDate: LocalDate = LocalDate.now().plusDays(30),
-            count: Int = 0
-        ) = StreakModel(
-            streakId = streakId,
-            streakName = streakName,
-            colorValue = color.value.toLong(),
-            frequency = frequency,
-            startDate = startDate,
-            endDate = endDate,
-            count = count
-        )
-    }
-}
+)
 
 enum class Frequency {
     DAILY, WEEKLY, MONTHLY
@@ -58,20 +34,28 @@ enum class Frequency {
 
 class Converters {
 
-    // Frequency converters
     @TypeConverter
-    fun fromFrequency(value: String): Frequency = Frequency.valueOf(value)
+    fun fromColor(color: Color): Long = color.value.toLong()
 
     @TypeConverter
-    fun frequencyToString(frequency: Frequency): String = frequency.name
+    fun toColor(value: Long): Color = Color(value.toULong())
 
-    // LocalDate converters
+    // Optional: LocalDate converters
     @TypeConverter
-    fun fromLocalDate(date: String): LocalDate = LocalDate.parse(date)
+    fun fromLocalDate(date: LocalDate): String {
+        return date.toString()
+    }
 
     @TypeConverter
-    fun localDateToString(date: LocalDate): String = date.toString()
+    fun toLocalDate(dateString: String): LocalDate {
+        return LocalDate.parse(dateString)
+    }
 }
+
+
+
+
+
 
 
 

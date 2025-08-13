@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.streaks.Model.StreakModel
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface StreakDao {
@@ -20,7 +21,7 @@ interface StreakDao {
     suspend fun deleteStreak(streak: StreakModel)
 
     @Query("SELECT * FROM streaks")
-    suspend fun getAllStreaks(): List<StreakModel>
+     fun getAllStreaks(): Flow<List<StreakModel>>
 
 
 

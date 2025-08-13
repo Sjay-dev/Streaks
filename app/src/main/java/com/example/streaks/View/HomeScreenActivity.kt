@@ -76,6 +76,9 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
+
+
+
 @AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,6 +98,7 @@ class HomeScreenActivity : ComponentActivity() {
 
 @Composable
 fun scaffoldScreen(){
+
 
     val systemUiController = rememberSystemUiController()
         systemUiController.setSystemBarsColor(
@@ -226,11 +230,12 @@ fun scaffoldScreen(){
 }
 
 @Composable
-fun HomeScreen(paddingValues: PaddingValues)
+fun HomeScreen(paddingValues: PaddingValues
+,    viewModel : StreakViewModel = hiltViewModel()
+)
 {
 
-val viewModel : StreakViewModel = hiltViewModel()
-val streaks by viewModel.streaks.collectAsState()
+    val streaks by viewModel.streaks.collectAsState()
 
 
     if (streaks.isEmpty()) {
@@ -260,7 +265,7 @@ val streaks by viewModel.streaks.collectAsState()
                 LazyColumn {
                     items(streaks) {streak->
 
-                            Streaks(streak)
+                            Streaks(streak , viewModel)
                     }
                 }
             }
@@ -270,7 +275,9 @@ val streaks by viewModel.streaks.collectAsState()
 
 
 @Composable
-fun Streaks(streak : StreakModel) {
+fun Streaks(streak : StreakModel,
+  viewModel : StreakViewModel
+) {
 
     Surface(color = Color.White ,
         shape = RoundedCornerShape(10.dp),
@@ -300,7 +307,7 @@ fun Streaks(streak : StreakModel) {
                     )
 
                     Text(
-                        "2",
+                        viewModel.nextCount(streak),
                         Modifier.padding(bottom = 12.dp),
                         fontSize = 15.sp,
                         color = Color.Gray
@@ -310,14 +317,14 @@ fun Streaks(streak : StreakModel) {
                 Box(
                     modifier = Modifier.size(55.dp)
                         .clip(shape = CircleShape)
-                        .border(width = 3.dp, color = streak.color , shape = CircleShape),
+                        .border(width = 3.dp, color = Color(streak.colorValue.toULong()) , shape = CircleShape),
                     Alignment.Center
                 ) {
                     Text(
-                        "3",
+                        viewModel.calculateStreakCount(streak).toString(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
-                        color = streak.color
+                        color = Color(streak.colorValue.toULong())
                     )
                 }
             }

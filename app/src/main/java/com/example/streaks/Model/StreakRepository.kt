@@ -1,6 +1,7 @@
 package com.example.streaks.Model
 
 import com.example.streaks.Model.DataBase.StreakDao
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class StreakRepository @Inject constructor(
@@ -18,7 +19,7 @@ class StreakRepository @Inject constructor(
         dao.deleteStreak(streak)
     }
 
-    suspend fun getAllStreaks(): List<StreakModel> {
+     fun getAllStreaks(): Flow<List<StreakModel>> {
         return dao.getAllStreaks()
     }
 

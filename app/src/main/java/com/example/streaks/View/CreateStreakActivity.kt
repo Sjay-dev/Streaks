@@ -1,5 +1,7 @@
 package com.example.streaks.View
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -89,6 +92,8 @@ CreateStreakScreen()
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateStreakScreen(){
+
+    val activity = LocalContext.current as Activity
 
     val systemUiController = rememberSystemUiController()
 
@@ -440,6 +445,7 @@ fun CreateStreakScreen(){
                                     endDate = endDate
                                 )
                             )
+                        activity.finish()
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
