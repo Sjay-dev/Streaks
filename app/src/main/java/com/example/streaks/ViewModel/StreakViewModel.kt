@@ -16,8 +16,6 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
-
-
 @HiltViewModel
 class StreakViewModel @Inject constructor
     (private val repository: StreakRepository) : ViewModel() {
@@ -26,8 +24,6 @@ class StreakViewModel @Inject constructor
         repository.getAllStreaks().stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
         )
-
-
 
     fun addStreak(streak: StreakModel) {
         viewModelScope.launch {
@@ -116,5 +112,37 @@ class StreakViewModel @Inject constructor
             Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, now).toInt() + 1
         }
     }
+
+
+                                // === CLICKS ===
+    private val _selectedStreaks = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedStreaks: StateFlow<Set<Int>> = _selectedStreaks
+
+    fun toggleSelection(streakId: Int) {
+        _selectedStreaks.value =
+            if (_selectedStreaks.value.contains(streakId)) {
+                _selectedStreaks.value - streakId
+            } else {
+                _selectedStreaks.value + streakId
+            }
+    }
+
+    fun clearSelection() {
+        _selectedStreaks.value = emptySet()
+    }
+
+    fun deleteSelected() {
+        viewModelScope.launch {
+            _selectedStreaks.value.forEach { id ->
+                getStreakById(id) { streak ->
+                    streak?.let { deleteStreak(it) }
+                }
+            }
+            clearSelection()
+        }
+    }
+
+
+
 
 }
