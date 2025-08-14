@@ -13,26 +13,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Streaks">
         <activity
+            android:name=".View.StreakDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".View.CreateStreakActivity"
             android:exported="false" />
         <activity
             android:name=".View.HomeScreenActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            >
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER"
-                    android:theme="@style/Theme.Streaks"
-                    />
+                <category
+                    android:name="android.intent.category.LAUNCHER"
+                    android:theme="@style/Theme.Streaks" />
             </intent-filter>
         </activity>
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-         >
-        </activity>
+            android:exported="true" />
     </application>
 
 </manifest>

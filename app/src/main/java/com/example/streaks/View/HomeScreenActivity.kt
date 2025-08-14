@@ -72,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.Frequency
@@ -305,6 +306,8 @@ fun Streaks(
     isSelected: Boolean,
     inSelectionMode: Boolean
 ) {
+    val context = LocalContext.current
+
     Surface(
         color = if (isSelected) Color(0xFFE0F7FA) else Color.White,
         shape = RoundedCornerShape(10.dp),
@@ -323,7 +326,7 @@ fun Streaks(
                     if (inSelectionMode) {
                         viewModel.toggleSelection(streak.streakId)
                     } else {
-                        // Normal click action
+                            context.startActivity(Intent(context, StreakDetailsActivity::class.java))
                     }
                 },
                 onLongClick = {
