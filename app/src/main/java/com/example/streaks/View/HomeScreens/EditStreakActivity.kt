@@ -1,4 +1,4 @@
-package com.example.streaks.View
+package com.example.streaks.View.HomeScreens
 
 import android.annotation.SuppressLint
 import android.app.Activity

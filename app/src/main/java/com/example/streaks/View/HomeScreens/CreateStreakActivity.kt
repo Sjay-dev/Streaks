@@ -1,12 +1,9 @@
-package com.example.streaks.View
+package com.example.streaks.View.HomeScreens
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,8 +56,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
@@ -68,13 +63,10 @@ import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
 
 @AndroidEntryPoint
 class CreateStreakActivity : ComponentActivity() {
@@ -154,7 +146,7 @@ fun CreateStreakScreen(){
                     Text("Create A New Streak", fontWeight = FontWeight.Bold, fontSize = 23.sp)
 
                     IconButton(
-                        onClick = {  },
+                        onClick = {  activity.finish()},
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         Icon(

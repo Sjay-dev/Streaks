@@ -13,16 +13,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Streaks">
         <activity
-            android:name=".View.EditStreakActivity"
+            android:name=".View.SettingsScreens.SettingsScreenActivity"
             android:exported="false" />
         <activity
-            android:name=".View.StreakDetailsActivity"
+            android:name=".View.NotificationScreens.NotificationScreenActivity"
             android:exported="false" />
         <activity
-            android:name=".View.CreateStreakActivity"
+            android:name=".View.HomeScreens.EditStreakActivity"
             android:exported="false" />
         <activity
-            android:name=".View.HomeScreenActivity"
+            android:name=".View.HomeScreens.StreakDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".View.HomeScreens.CreateStreakActivity"
+            android:exported="false" />
+        <activity
+            android:name=".View.HomeScreens.HomeScreenActivity"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>

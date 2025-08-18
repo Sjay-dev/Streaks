@@ -1,22 +1,17 @@
 @file:OptIn(ExperimentalFoundationApi::class)
 
-package com.example.streaks.View
+package com.example.streaks.View.HomeScreens
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,6 +33,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -49,47 +44,38 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startActivity
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.streaks.Model.Frequency
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
-import com.example.streaks.R
+import com.example.streaks.View.NotificationScreens.NotificationScreen
+import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.StreakViewModel
-import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.time.LocalDate
 import java.time.LocalTime
-
-
-
 
 @AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
@@ -113,7 +99,11 @@ class HomeScreenActivity : ComponentActivity() {
 fun scaffoldScreen(
     viewModel: StreakViewModel = hiltViewModel()
 ) {
+    val navController = rememberNavController()
+
     val selectedStreaks by viewModel.selectedStreaks.collectAsState()
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(
@@ -139,13 +129,41 @@ fun scaffoldScreen(
         }
     }
 
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        val deleteMessage = if (selectedStreaks.size == 1) {
+            "Are you sure you want to delete this streak?"
+        } else {
+            "Are you sure you want to delete ${selectedStreaks.size} streaks?"
+        }
+
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Confirm Deletion") },
+            text = { Text(deleteMessage) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteSelected()
+                    showDeleteDialog = false
+                }) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             if (selectedStreaks.isNotEmpty()) {
                 TopAppBar(
                     title = { Text("${selectedStreaks.size} selected") },
                     actions = {
-                        IconButton(onClick = { viewModel.deleteSelected() }) {
+                        IconButton(onClick = {showDeleteDialog = true}) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
                         IconButton(onClick = { viewModel.clearSelection() }) {
@@ -204,54 +222,22 @@ fun scaffoldScreen(
         },
 
         bottomBar = {
-            val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
-            val coroutineScope = rememberCoroutineScope()
-
-            NavigationBar(containerColor = Color.White) {
-                val items = listOf("Home", "Analysis", "Notifications", "Settings")
-                val icons = listOf(
-                    Icons.Default.Home,
-                    painterResource(R.drawable.monitoring_24px),
-                    Icons.Default.Notifications,
-                    Icons.Default.Settings
-                )
-
-                items.forEachIndexed { index, label ->
-                    NavigationBarItem(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        icon = {
-                            if (index == 1) {
-                                Icon(painter = icons[index] as Painter, contentDescription = label)
-                            } else {
-                                Icon(
-                                    imageVector = icons[index] as ImageVector,
-                                    contentDescription = label
-                                )
-                            }
-                        },
-                        label = {
-                            Text(
-                                label,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Blue
-                        )
-                    )
-                }
-            }
+            BottomNavigationBar(navController)
         }
     ) { paddingValues ->
-        HomeScreen(paddingValues, viewModel)
-    }
-}
+        NavHost(
+            navController = navController,
+            startDestination = "home",
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable("home") { HomeScreen(paddingValues, viewModel) }
+            composable("notifications") { NotificationScreen()}
+            composable("settings") { SettingsScreen() }
+        }
+
+    } }
+
+
 
 @Composable
 fun HomeScreen(
@@ -309,7 +295,7 @@ fun Streaks(
     val context = LocalContext.current
 
     Surface(
-        color = if (isSelected) Color(0xFFE0F7FA) else Color.White,
+        color = if (isSelected) Color(0xFF2196F3) else Color.White,
         shape = RoundedCornerShape(10.dp),
         shadowElevation = 1.dp,
         border = BorderStroke(
@@ -383,6 +369,45 @@ fun Streaks(
                     )
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+fun BottomNavigationBar(navController: NavHostController) {
+    val items = listOf("home", "notifications", "settings")
+    val labels = listOf("Home", "Notifications", "Settings")
+    val icons = listOf(
+        Icons.Default.Home,
+        Icons.Default.Notifications,
+        Icons.Default.Settings
+    )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    NavigationBar(containerColor = Color.White) {
+        items.forEachIndexed { index, route ->
+            NavigationBarItem(
+                selected = currentRoute == route,
+                onClick = {
+                    navController.navigate(route) {
+
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                icon = { Icon(icons[index] as ImageVector, contentDescription = labels[index]) },
+
+                label = {
+                    Text(labels[index], fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Color.Blue
+                )
+            )
         }
     }
 }
