@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +55,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +79,7 @@ import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 
 @AndroidEntryPoint
@@ -99,7 +104,10 @@ class HomeScreenActivity : ComponentActivity() {
 fun scaffoldScreen(
     viewModel: StreakViewModel = hiltViewModel()
 ) {
-    val navController = rememberNavController()
+    rememberNavController()
+
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
+    val coroutineScope = rememberCoroutineScope()
 
     val selectedStreaks by viewModel.selectedStreaks.collectAsState()
 
@@ -192,7 +200,11 @@ fun scaffoldScreen(
                             fontWeight = FontWeight.Bold
                         )
 
-                        IconButton(onClick = { TODO() }) {
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(3)
+                            }
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = "Settings"
@@ -222,17 +234,24 @@ fun scaffoldScreen(
         },
 
         bottomBar = {
-            BottomNavigationBar(navController)
+            BottomNavigationBar(
+                pagerState = pagerState,
+                onTabSelected = { index ->
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                }
+            )
         }
     ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = "home",
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable("home") { HomeScreen(paddingValues, viewModel) }
-            composable("notifications") { NotificationScreen()}
-            composable("settings") { SettingsScreen() }
+        HorizontalPager(
+            state = pagerState,
+        ) { page ->
+            when (page) {
+                0 -> HomeScreen(paddingValues , viewModel)
+                1 -> NotificationScreen()
+                2 -> SettingsScreen()
+            }
         }
 
     } }
@@ -374,36 +393,28 @@ fun Streaks(
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
-    val items = listOf("home", "notifications", "settings")
-    val labels = listOf("Home", "Notifications", "Settings")
+fun BottomNavigationBar(
+    pagerState: PagerState,
+    onTabSelected: (Int) -> Unit
+) {
+    val items = listOf("Home", "Notifications", "Settings")
     val icons = listOf(
         Icons.Default.Home,
         Icons.Default.Notifications,
         Icons.Default.Settings
     )
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
     NavigationBar(containerColor = Color.White) {
-        items.forEachIndexed { index, route ->
+        items.forEachIndexed { index, label ->
             NavigationBarItem(
-                selected = currentRoute == route,
-                onClick = {
-                    navController.navigate(route) {
-
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                selected = pagerState.currentPage == index,
+                onClick = { onTabSelected(index) },
+                icon = {
+                        Icon(icons[index] as ImageVector, contentDescription = label)
                 },
-                icon = { Icon(icons[index] as ImageVector, contentDescription = labels[index]) },
-
-                label = {
-                    Text(labels[index], fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                },
+                label = { Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = Color.Blue
                 )
@@ -411,6 +422,7 @@ fun BottomNavigationBar(navController: NavHostController) {
         }
     }
 }
+
 
 
 
