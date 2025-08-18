@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,15 +43,22 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class StreakDetailsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-         val streak = StreakModel()
+        val streakId = intent.getIntExtra("streakId", -1)
+        if (streakId == -1) {
+            finish()
+            return
+        }
         setContent{
-                    StreakDetailScreen(streak.streakId ,  viewModel = hiltViewModel())
+                    StreakDetailScreen(streakId)
         }
     }
 }
@@ -62,7 +70,15 @@ fun StreakDetailScreen(
     streakId: Int,
     viewModel: StreakViewModel = hiltViewModel(),
 ) {
-  val  activity: Activity = LocalContext.current as Activity
+
+    val systemUiController = rememberSystemUiController()
+
+    systemUiController.setSystemBarsColor(
+        Color.Transparent ,
+        darkIcons = true
+    )
+
+  val  activity: Activity = LocalContext.current as  Activity
 
     var streak by remember { mutableStateOf<StreakModel?>(null) }
 
@@ -168,7 +184,7 @@ fun StreakDetailScreen(
                 // Edit Button
                 Button(
                     onClick = {
-                        val intent = Intent(context, CreateStreakActivity::class.java)
+                        val intent = Intent(context, EditStreakActivity::class.java)
                         intent.putExtra("streakId", s.streakId)
                         context.startActivity(intent)
                     },

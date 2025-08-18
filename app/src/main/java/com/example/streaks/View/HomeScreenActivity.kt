@@ -325,8 +325,13 @@ fun Streaks(
                 onClick = {
                     if (inSelectionMode) {
                         viewModel.toggleSelection(streak.streakId)
-                    } else {
-                            context.startActivity(Intent(context, StreakDetailsActivity::class.java))
+                    }
+
+                    else {
+                            context.startActivity(Intent(context, StreakDetailsActivity::class.java).apply {
+                                putExtra("streakId" , streak.streakId)
+                            }
+                            )
                     }
                 },
                 onLongClick = {
