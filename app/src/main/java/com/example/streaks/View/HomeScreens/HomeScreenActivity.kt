@@ -2,11 +2,19 @@
 
 package com.example.streaks.View.HomeScreens
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -66,6 +74,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -73,6 +84,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.R
 import com.example.streaks.View.NotificationScreens.NotificationScreen
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.StreakViewModel
@@ -81,6 +93,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+private val CHANNEL_ID = "my_channel_id"
 
 @AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
@@ -89,12 +102,60 @@ class HomeScreenActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val requestPermissionLauncher =
+                registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+                    // You could show a message if not granted
+                }
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        // Create notification channel
+        createNotificationChannel()
+
         setContent {
 
                 scaffoldScreen()
 
         }
 
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "My Channel"
+            val descriptionText = "This is my notification channel"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+
+            val notificationManager: NotificationManager =
+                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun showNotification() {
+        val intent = Intent(this, HomeScreenActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(
+            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_background) // make sure you have an icon
+            .setContentTitle("Hello from Jetpack Compose 🚀")
+            .setContentText("This is a notification triggered by a Compose button.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        with(NotificationManagerCompat.from(this)) {
+            notify(1001, builder.build())
+        }
     }
 }
 
@@ -104,8 +165,9 @@ class HomeScreenActivity : ComponentActivity() {
 fun scaffoldScreen(
     viewModel: StreakViewModel = hiltViewModel()
 ) {
-    rememberNavController()
 
+
+    rememberNavController()
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
     val coroutineScope = rememberCoroutineScope()
 
@@ -249,13 +311,15 @@ fun scaffoldScreen(
         ) { page ->
             when (page) {
                 0 -> HomeScreen(paddingValues , viewModel)
-                1 -> NotificationScreen()
+                1 -> NotificationScreen(
+                    onNotifyClick = {
+                    }
+                )
                 2 -> SettingsScreen()
             }
         }
 
     } }
-
 
 
 @Composable

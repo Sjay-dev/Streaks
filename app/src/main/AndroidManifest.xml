@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".Model.MyApp"
         android:allowBackup="true"
@@ -12,12 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Streaks">
-        <activity
-            android:name=".View.SettingsScreens.SettingsScreenActivity"
-            android:exported="false" />
-        <activity
-            android:name=".View.NotificationScreens.NotificationScreenActivity"
-            android:exported="false" />
+
         <activity
             android:name=".View.HomeScreens.EditStreakActivity"
             android:exported="false" />
