@@ -313,6 +313,8 @@ fun scaffoldScreen(
                 0 -> HomeScreen(paddingValues , viewModel)
                 1 -> NotificationScreen(
                     onNotifyClick = {
+                        val activity = context as HomeScreenActivity
+                        activity.showNotification()
                     }
                 )
                 2 -> SettingsScreen()

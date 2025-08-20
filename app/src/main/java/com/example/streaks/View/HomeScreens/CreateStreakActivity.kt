@@ -1,5 +1,6 @@
 package com.example.streaks.View.HomeScreens
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -38,7 +40,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +69,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -81,6 +86,7 @@ CreateStreakScreen()
 
 
 
+@SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateStreakScreen(){
@@ -119,6 +125,12 @@ fun CreateStreakScreen(){
 
     var isEternity by remember { mutableStateOf(true) }
     var isEternityText by remember { mutableStateOf("Externity?") }
+
+    //Reminder Switch
+    var isReminder by remember { mutableStateOf(true) }
+    var reminderText by remember { mutableStateOf("No Reminder") }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
 
     var confirmedEndDate by remember { mutableStateOf<Long?>(null) }
     var tempSelectedEndDate by remember { mutableStateOf<Long?>(null) }
@@ -262,7 +274,29 @@ fun CreateStreakScreen(){
                     )
                 }
 
-                Spacer(modifier = Modifier.size(15.dp))
+                // === REMINDER PICKER ===
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(reminderText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Switch(
+                        checked = isReminder,
+                        onCheckedChange = {
+                            isReminder = it
+
+                            if (isReminder) {
+                                showTimePicker = true
+                            } else {
+                                reminderText = "No Reminder"
+                                selectedTime = null
+                            }
+                        },
+                        colors = SwitchDefaults.colors(checkedTrackColor = Color.Blue)
+                    )
+                }
 
                 // === START DATE PICKER ===
                 if (!isToday) {
@@ -421,6 +455,35 @@ fun CreateStreakScreen(){
                             .toLocalDate()
                         isEternityText = localDate.format(formatter)
                     }
+                }
+
+                //Switch for reminder
+                if (showTimePicker) {
+                    val timePickerState = rememberTimePickerState(
+                        initialHour = LocalTime.now().hour,
+                        initialMinute = LocalTime.now().minute
+                    )
+
+                    AlertDialog(
+                        onDismissRequest = { showTimePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                                reminderText = "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
+                                showTimePicker = false
+                            }) {
+                                Text("OK")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showTimePicker = false }) {
+                                Text("Cancel")
+                            }
+                        },
+                        text = {
+                            TimePicker(state = timePickerState)
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
