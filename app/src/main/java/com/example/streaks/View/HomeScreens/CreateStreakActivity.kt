@@ -2,9 +2,12 @@ package com.example.streaks.View.HomeScreens
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.os.Build
 import android.os.Bundle
+import android.text.format.DateFormat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,14 +18,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -44,6 +50,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,78 +80,58 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+// ========================= ACTIVITY =========================
 @AndroidEntryPoint
 class CreateStreakActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-            setContent {
-CreateStreakScreen()
-            }
+        setContent {
+            CreateStreakScreen()
+        }
     }
 }
 
-
-
+// ========================= SCREEN =========================
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CreateStreakScreen(){
-
+fun CreateStreakScreen() {
     val activity = LocalContext.current as Activity
-
     val systemUiController = rememberSystemUiController()
+    systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = true)
 
-    systemUiController.setSystemBarsColor(
-        Color.Transparent ,
-        darkIcons = true
-    )
+    // === ViewModel ===
+    val viewModel: StreakViewModel = hiltViewModel()
 
-    //VIEWMODEL//
-    val viewModel : StreakViewModel = hiltViewModel()
-
-
+    // === States ===
     var streakName by remember { mutableStateOf("") }
     var streakColor by remember { mutableStateOf(Color.Blue) }
     var frequency by remember { mutableStateOf(Frequency.DAILY) }
 
-    // Start date state
-    var showStartDatePicker by remember { mutableStateOf(true) }
     var startDate by remember { mutableStateOf(LocalDate.now()) }
-
     var isToday by remember { mutableStateOf(true) }
     var isTodayText by remember { mutableStateOf("Today?") }
-
-    var confirmedStartDate by remember { mutableStateOf<Long?>(null) }
     var tempSelectedStartDate by remember { mutableStateOf<Long?>(null) }
-    val startDatePickerState = rememberDatePickerState(initialSelectedDateMillis = tempSelectedStartDate)
+    rememberDatePickerState(initialSelectedDateMillis = tempSelectedStartDate)
 
-    // End date state
-    var showEndDatePicker by remember { mutableStateOf(true) }
     var endDate by remember { mutableStateOf(LocalDate.now()) }
-
     var isEternity by remember { mutableStateOf(true) }
-    var isEternityText by remember { mutableStateOf("Externity?") }
+    var isEternityText by remember { mutableStateOf("Eternity?") }
+    var tempSelectedEndDate by remember { mutableStateOf<Long?>(null) }
+    rememberDatePickerState(initialSelectedDateMillis = tempSelectedEndDate)
 
-    //Reminder Switch
     var isReminder by remember { mutableStateOf(true) }
     var reminderText by remember { mutableStateOf("No Reminder") }
     var showTimePicker by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
 
-    var confirmedEndDate by remember { mutableStateOf<Long?>(null) }
-    var tempSelectedEndDate by remember { mutableStateOf<Long?>(null) }
-    val endDatePickerState = rememberDatePickerState(initialSelectedDateMillis = tempSelectedEndDate)
-
     val focusManager = LocalFocusManager.current
 
-    // UI data
     val presetColors = listOf(Color.Red, Color.Blue, Color.Yellow, Color.Black, Color.Green, Color.Magenta)
-
     val frequencyOptions = Frequency.values()
 
-
-    // Scaffold for consistent layout structure
     Scaffold(
         topBar = {
             Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
@@ -156,11 +143,7 @@ fun CreateStreakScreen(){
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Create A New Streak", fontWeight = FontWeight.Bold, fontSize = 23.sp)
-
-                    IconButton(
-                        onClick = {  activity.finish()},
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
+                    IconButton(onClick = { activity.finish() }, modifier = Modifier.align(Alignment.CenterStart)) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back_24px),
                             contentDescription = "Back"
@@ -170,7 +153,6 @@ fun CreateStreakScreen(){
             }
         }
     ) { paddingValues ->
-
         Surface(
             color = Color.White,
             modifier = Modifier
@@ -191,8 +173,7 @@ fun CreateStreakScreen(){
                         focusedLabelColor = Color.Blue,
                         focusedBorderColor = Color.Blue
                     ),
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions { focusManager.clearFocus() }
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions { focusManager.clearFocus() }
                 )
 
                 Spacer(modifier = Modifier.size(15.dp))
@@ -275,7 +256,6 @@ fun CreateStreakScreen(){
                 }
 
                 // === REMINDER PICKER ===
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -286,202 +266,36 @@ fun CreateStreakScreen(){
                         checked = isReminder,
                         onCheckedChange = {
                             isReminder = it
-
                             if (isReminder) {
-                                showTimePicker = true
-                            } else {
                                 reminderText = "No Reminder"
                                 selectedTime = null
+                            } else {
+                                showTimePicker = true
+
                             }
                         },
                         colors = SwitchDefaults.colors(checkedTrackColor = Color.Blue)
                     )
                 }
 
-                // === START DATE PICKER ===
-                if (!isToday) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF0F0F0))
-                            .clickable { showStartDatePicker = true }
-                            .padding(16.dp)
-                    ) {
-                        val displayText = confirmedStartDate?.let {
-                            "Tap to Pick another start date"
-                        } ?: "Tap to select a start date"
-
-                        Text(displayText)
-                    }
-
-                    Spacer(modifier = Modifier.size(10.dp))
-
-                    if (showStartDatePicker) {
-                        DatePicker(
-                            state = startDatePickerState,
-                            showModeToggle = true,
-                            colors = DatePickerDefaults.colors(
-                                containerColor = Color.White,
-                                currentYearContentColor = Color.Blue,
-                                selectedDayContainerColor = Color.Blue,
-                                todayDateBorderColor = Color.Blue,
-                                todayContentColor = Color.Blue,
-                                selectedYearContainerColor = Color.Blue,
-                                dateTextFieldColors = OutlinedTextFieldDefaults.colors(
-                                    focusedLabelColor = Color.Blue,
-                                    focusedBorderColor = Color.Blue
-                                )
-                            )
-                        )
-
-
-
-                        Spacer(modifier = Modifier.size(10.dp))
-
-                        Row(
-                            horizontalArrangement = Arrangement.End,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            TextButton(onClick = {
-                                showStartDatePicker = false
-                                tempSelectedStartDate = null
-                                confirmedStartDate = null
-                                isToday = true
-                            }) {
-                                Text("Cancel")
-                            }
-
-                            Spacer(modifier = Modifier.size(10.dp))
-
-                            TextButton(onClick = {
-                                confirmedStartDate = startDatePickerState.selectedDateMillis
-                                tempSelectedStartDate = confirmedStartDate
-                                confirmedStartDate?.let {
-                                    startDate = Instant.ofEpochMilli(it)
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
-                                }
-                                showStartDatePicker = false
-                            }) {
-                                Text("OK")
-                            }
-                        }
-                    }
-
-                    // Display selected date
-                    confirmedStartDate?.let {
-                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-                        val localDate = Instant.ofEpochMilli(it)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                        isTodayText = localDate.format(formatter)
-                    }
-                }
-
-                // === END DATE PICKER ===
-                if (!isEternity) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF0F0F0))
-                            .clickable { showEndDatePicker = true }
-                            .padding(16.dp)
-                    ) {
-                        val displayText = confirmedEndDate?.let {
-                            "Tap to Pick another end date"
-                        } ?: "Tap to select a end date"
-
-                        Text(displayText)
-                    }
-
-                    Spacer(modifier = Modifier.size(10.dp))
-
-                    if (showEndDatePicker) {
-                        DatePicker(
-                            state = endDatePickerState,
-                            showModeToggle = true,
-                            colors = DatePickerDefaults.colors(
-                                containerColor = Color.White,
-                                currentYearContentColor = Color.Blue,
-                                selectedDayContainerColor = Color.Blue,
-                                todayDateBorderColor = Color.Blue,
-                                todayContentColor = Color.Blue,
-                                selectedYearContainerColor = Color.Blue,
-                                dateTextFieldColors = OutlinedTextFieldDefaults.colors(
-                                    focusedLabelColor = Color.Blue,
-                                    focusedBorderColor = Color.Blue
-                                )
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.size(10.dp))
-
-                        Row(
-                            horizontalArrangement = Arrangement.End,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            TextButton(onClick = {
-                                showEndDatePicker = false
-                                tempSelectedEndDate = null
-                                confirmedEndDate = null
-                                isEternity = true
-                            }) {
-                                Text("Cancel")
-                            }
-
-                            Spacer(modifier = Modifier.size(10.dp))
-
-                            TextButton(onClick = {
-                                confirmedEndDate = endDatePickerState.selectedDateMillis
-                                tempSelectedEndDate = confirmedEndDate
-                                confirmedEndDate?.let {
-                                    endDate = Instant.ofEpochMilli(it)
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
-                                }
-                                showEndDatePicker = false
-                            }) {
-                                Text("OK")
-                            }
-                        }
-                    }
-
-                    confirmedEndDate?.let {
-                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-                        val localDate = Instant.ofEpochMilli(it)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                        isEternityText = localDate.format(formatter)
-                    }
-                }
-
-                //Switch for reminder
+                // === CUSTOM TIME PICKER DIALOG ===
                 if (showTimePicker) {
-                    val timePickerState = rememberTimePickerState(
-                        initialHour = LocalTime.now().hour,
-                        initialMinute = LocalTime.now().minute
-                    )
-
                     AlertDialog(
                         onDismissRequest = { showTimePicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                                reminderText = "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-                                showTimePicker = false
-                            }) {
-                                Text("OK")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showTimePicker = false }) {
-                                Text("Cancel")
-                            }
-                        },
+                        confirmButton = {},
                         text = {
-                            TimePicker(state = timePickerState)
+                            CustomTimePicker(
+                                onCancel = { showTimePicker = false },
+                                onSave = { hour, minute ->
+                                    selectedTime = LocalTime.of(hour, minute)
+                                    reminderText = if (DateFormat.is24HourFormat(activity)) {
+                                        "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                                    } else {
+                                        "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
+                                    }
+                                    showTimePicker = false
+                                }
+                            )
                         }
                     )
                 }
@@ -491,15 +305,15 @@ fun CreateStreakScreen(){
                 // === CREATE BUTTON ===
                 Button(
                     onClick = {
-                            viewModel.addStreak(
-                                StreakModel(
-                                    streakName = streakName,
-                                    colorValue = streakColor.value.toLong(),
-                                    frequency = frequency ,
-                                    startDate = startDate,
-                                    endDate = endDate
-                                )
+                        viewModel.addStreak(
+                            StreakModel(
+                                streakName = streakName,
+                                colorValue = streakColor.value.toLong(),
+                                frequency = frequency,
+                                startDate = startDate,
+                                endDate = endDate
                             )
+                        )
                         activity.finish()
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -512,4 +326,127 @@ fun CreateStreakScreen(){
         }
     }
 }
+
+// ========================= CUSTOM TIME PICKER =========================
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CustomTimePicker(
+    onCancel: () -> Unit,
+    onSave: (Int, Int) -> Unit
+) {
+    val context = LocalContext.current
+    val is24Hour = DateFormat.is24HourFormat(context)
+
+    var selectedHour by remember { mutableStateOf(0) }
+    var selectedMinute by remember { mutableStateOf(0) }
+    var isAm by remember { mutableStateOf(true) }
+
+    val hours = if (is24Hour) (0..23).toList() else (1..12).toList()
+    val minutes = (0..59).toList()
+
+    val hourState = rememberLazyListState()
+    val minuteState = rememberLazyListState()
+
+    val today = LocalDate.now()
+    val formattedDate = today.format(DateTimeFormatter.ofPattern("EEE, dd MMM"))
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(20.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LoopingNumberPicker(hours, hourState) { selectedHour = it }
+            Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold)
+            LoopingNumberPicker(minutes, minuteState) { selectedMinute = it }
+
+            if (!is24Hour) {
+                Column(
+                    modifier = Modifier.padding(start = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    TextButton(onClick = { isAm = true }) {
+                        Text("AM", fontWeight = if (isAm) FontWeight.Bold else FontWeight.Normal)
+                    }
+                    TextButton(onClick = { isAm = false }) {
+                        Text("PM", fontWeight = if (!isAm) FontWeight.Bold else FontWeight.Normal)
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Text("Today - $formattedDate", color = Color.Gray)
+
+        Spacer(Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            TextButton(onClick = { onCancel() }) {
+                Text("Cancel", fontSize = 18.sp)
+            }
+            TextButton(onClick = {
+                val finalHour =
+                    if (is24Hour) selectedHour
+                    else if (isAm) selectedHour % 12
+                    else (selectedHour % 12) + 12
+                onSave(finalHour, selectedMinute)
+            }) {
+                Text("Save", fontSize = 18.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun LoopingNumberPicker(
+    items: List<Int>,
+    state: LazyListState,
+    onValueChange: (Int) -> Unit
+) {
+    val repeatedItems = List(1000) { index -> items[index % items.size] }
+    val middleIndex = repeatedItems.size / 2
+
+    LaunchedEffect(Unit) { state.scrollToItem(middleIndex) }
+
+    Box(
+        modifier = Modifier
+            .height(120.dp)
+            .width(80.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        LazyColumn(state = state, horizontalAlignment = Alignment.CenterHorizontally) {
+            items(repeatedItems.size) { index ->
+                val value = repeatedItems[index]
+                val isSelected = state.firstVisibleItemIndex == index
+                Text(
+                    text = String.format("%02d", value),
+                    fontSize = if (isSelected) 40.sp else 24.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) Color.Black else Color.Gray,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(state.firstVisibleItemIndex) {
+        val actualValue = repeatedItems[state.firstVisibleItemIndex]
+        onValueChange(actualValue)
+    }
+}
+
+
+
+
 
