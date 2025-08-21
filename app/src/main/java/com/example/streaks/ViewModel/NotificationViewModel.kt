@@ -1,8 +1,8 @@
 package com.example.streaks.ViewModel
 
 import androidx.lifecycle.ViewModel
-import com.example.streaks.Model.DataBase.NotificationModel
-import com.example.streaks.Model.DataBase.NotificationRepository
+import com.example.streaks.Model.NotificationModel
+import com.example.streaks.Model.NotificationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

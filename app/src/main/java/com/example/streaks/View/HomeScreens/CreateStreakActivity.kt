@@ -122,6 +122,7 @@ fun CreateStreakScreen() {
     var tempSelectedEndDate by remember { mutableStateOf<Long?>(null) }
     rememberDatePickerState(initialSelectedDateMillis = tempSelectedEndDate)
 
+
     var isReminder by remember { mutableStateOf(true) }
     var reminderText by remember { mutableStateOf("No Reminder") }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -301,6 +302,7 @@ fun CreateStreakScreen() {
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
+                LocalContext.current
 
                 // === CREATE BUTTON ===
                 Button(
@@ -311,7 +313,8 @@ fun CreateStreakScreen() {
                                 colorValue = streakColor.value.toLong(),
                                 frequency = frequency,
                                 startDate = startDate,
-                                endDate = endDate
+                                endDate = endDate ,
+                                reminderTime = selectedTime
                             )
                         )
                         activity.finish()

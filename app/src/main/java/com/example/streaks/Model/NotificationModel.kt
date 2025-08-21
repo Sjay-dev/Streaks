@@ -1,4 +1,4 @@
-package com.example.streaks.Model.DataBase
+package com.example.streaks.Model
 
 data class NotificationModel(
     val id: Int = 0,

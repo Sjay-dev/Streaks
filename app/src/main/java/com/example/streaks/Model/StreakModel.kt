@@ -7,6 +7,7 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Entity(tableName = "Streaks")
 @TypeConverters(Converters::class)
@@ -25,7 +26,10 @@ data class StreakModel(
 
     val endDate: LocalDate = LocalDate.now().plusDays(30),
 
-    val count: Int = 0
+    val count: Int = 0 ,
+
+    val reminderTime: LocalTime? = null
+
 )
 
 enum class Frequency {
@@ -50,6 +54,14 @@ class Converters {
     fun toLocalDate(dateString: String): LocalDate {
         return LocalDate.parse(dateString)
     }
+
+    @TypeConverter
+    fun fromLocalTime(time: LocalTime?): String? = time?.toString()
+
+    @TypeConverter
+    fun toLocalTime(timeString: String?): LocalTime? =
+        timeString?.let { LocalTime.parse(it) }
+
 }
 
 

@@ -1,4 +1,4 @@
-package com.example.streaks.Model.DataBase
+package com.example.streaks.Model
 
 class NotificationRepository {
     private val notifications = mutableListOf<NotificationModel>()

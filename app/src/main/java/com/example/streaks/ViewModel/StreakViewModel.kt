@@ -1,10 +1,15 @@
 package com.example.streaks.ViewModel
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.StreakRepository
+import com.example.streaks.View.NotificationScreens.ReminderReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,8 +18,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.Calendar
 import javax.inject.Inject
+import kotlin.jvm.java
 
 @HiltViewModel
 class StreakViewModel @Inject constructor
@@ -142,6 +150,39 @@ class StreakViewModel @Inject constructor
         }
     }
 
+    // FOR REMINDERS
+    fun scheduleReminder(context: Context, streakId: Int, streakName: String, reminderTime: LocalTime) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            putExtra("streakId", streakId)
+            putExtra("streakName", streakName)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            streakId, // use streakId to uniquely identify alarms
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, reminderTime.hour)
+            set(Calendar.MINUTE, reminderTime.minute)
+            set(Calendar.SECOND, 0)
+        }
+
+        if (calendar.timeInMillis < System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        }
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            pendingIntent
+        )
+    }
 
 
 
