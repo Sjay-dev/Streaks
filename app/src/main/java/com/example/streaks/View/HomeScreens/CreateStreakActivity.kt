@@ -132,11 +132,11 @@ fun CreateStreakScreen() {
     val endDatePickerState = rememberDatePickerState(initialSelectedDateMillis = tempSelectedEndDate)
 
     //=== Reminder values ===
-    var isReminder by remember { mutableStateOf(false) } // reminder toggle
+    var isReminder by remember { mutableStateOf(true) }
     var reminderText by remember { mutableStateOf("No Reminder") }
     var showTimePicker by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
-    var tempTime by remember { mutableStateOf<LocalTime?>(null) } // 👈 temp va
+    var tempTime by remember { mutableStateOf<LocalTime?>(null) }
 
     //===KEYBOARD focusManager===
     val focusManager = LocalFocusManager.current
