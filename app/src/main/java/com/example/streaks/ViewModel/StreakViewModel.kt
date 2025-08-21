@@ -6,21 +6,26 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.StreakRepository
-import com.example.streaks.View.NotificationScreens.ReminderReceiver
+import com.example.streaks.View.NotificationScreens.ReminderWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.jvm.java
 
@@ -151,37 +156,28 @@ class StreakViewModel @Inject constructor
     }
 
     // FOR REMINDERS
-    fun scheduleReminder(context: Context, streakId: Int, streakName: String, reminderTime: LocalTime) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    fun scheduleNotification(context: Context, streakId: Int, streakName: String, reminderTime: LocalTime) {
+        val now = LocalDateTime.now()
+        var targetDateTime = LocalDateTime.of(LocalDate.now(), reminderTime)
 
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            putExtra("streakId", streakId)
-            putExtra("streakName", streakName)
+        // If selected time already passed, schedule for tomorrow
+        if (targetDateTime.isBefore(now)) {
+            targetDateTime = targetDateTime.plusDays(1)
         }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            streakId, // use streakId to uniquely identify alarms
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val delay = Duration.between(now, targetDateTime).toMillis()
+
+        val data = workDataOf(
+            "streakId" to streakId,
+            "streakName" to streakName
         )
 
-        val calendar = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            set(Calendar.HOUR_OF_DAY, reminderTime.hour)
-            set(Calendar.MINUTE, reminderTime.minute)
-            set(Calendar.SECOND, 0)
-        }
+        val workRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
+            .setInputData(data)
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .build()
 
-        if (calendar.timeInMillis < System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
+        WorkManager.getInstance(context).enqueue(workRequest)
     }
 
 

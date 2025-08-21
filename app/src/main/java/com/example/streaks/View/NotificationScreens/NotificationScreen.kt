@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import com.example.streaks.R
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
 import com.example.streaks.Model.DataBase.StreakDao
 import com.example.streaks.Model.StreakRepository
 import com.example.streaks.View.HomeScreens.HomeScreenActivity
@@ -67,35 +69,24 @@ fun showNotification(context: Context, streakName: String) {
 }
 
 
-@AndroidEntryPoint // if you are using Hilt
-class ReminderReceiver : BroadcastReceiver() {
+class ReminderWorker(
+    private val context: Context,
+    workerParams: WorkerParameters
+) : CoroutineWorker(context, workerParams) {
 
-    @Inject
-    lateinit var repository: StreakRepository  // Hilt will inject this
+    override suspend fun doWork(): Result {
+        val streakId = inputData.getInt("streakId", 0)
+        val streakName = inputData.getString("streakName") ?: "Your Streak"
 
-    override fun onReceive(context: Context, intent: Intent?) {
-        val streakId = intent?.getIntExtra("streakId", -1) ?: return
-        val streakName = intent.getStringExtra("streakName") ?: "Your streak"
-
-        // Show notification
-        showNotification(context, streakName)
-
-        // Reschedule next day using repository
-        CoroutineScope(Dispatchers.IO).launch {
-            val streak = repository.getStreakById(streakId)
-            streak?.reminderTime?.let { reminderTime ->
-                // Re-schedule for tomorrow
-                val viewModel = StreakViewModel(repository) // or inject ViewModel if using Hilt properly
-                viewModel.scheduleReminder(context, streakId, streakName, reminderTime)
-            }
-        }
+        showNotification(context, streakId, streakName)
+        return Result.success()
     }
 
-    private fun showNotification(context: Context, streakName: String) {
+    private fun showNotification(context: Context, streakId: Int, streakName: String) {
+        val channelId = "streak_channel"
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val channelId = "streak_channel"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -108,11 +99,11 @@ class ReminderReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle("Streak Reminder")
-            .setContentText("Don't forget your streak: $streakName 🚀")
+            .setContentText("Don’t forget your streak: $streakName 🚀")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        notificationManager.notify(streakName.hashCode(), notification)
+        notificationManager.notify(streakId, notification)
     }
 }
 

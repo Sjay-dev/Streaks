@@ -68,6 +68,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -86,6 +88,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.View.NotificationScreens.NotificationScreen
+import com.example.streaks.View.NotificationScreens.createNotificationChannel
 import com.example.streaks.View.NotificationScreens.showNotification
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.StreakViewModel
@@ -112,7 +115,7 @@ class HomeScreenActivity : ComponentActivity() {
         }
 
         // Create notification channel
-        createNotificationChannel()
+        createNotificationChannel(context = this)
 
         setContent {
 
@@ -122,42 +125,8 @@ class HomeScreenActivity : ComponentActivity() {
 
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "My Channel"
-            val descriptionText = "This is my notification channel"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
 
-            val notificationManager: NotificationManager =
-                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
 
-    @SuppressLint("MissingPermission")
-    fun showNotification() {
-        val intent = Intent(this, HomeScreenActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_background) // make sure you have an icon
-            .setContentTitle("Hello from Jetpack Compose 🚀")
-            .setContentText("This is a notification triggered by a Compose button.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-
-        with(NotificationManagerCompat.from(this)) {
-            notify(1001, builder.build())
-        }
-    }
 }
 
 
@@ -378,14 +347,26 @@ fun Streaks(
     inSelectionMode: Boolean
 ) {
     val context = LocalContext.current
+    val streakColor = Color(streak.colorValue.toULong())
+
+    // Gradient for border
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(
+            streakColor.copy(alpha = 0.9f),
+            streakColor.copy(alpha = 0.4f),
+            streakColor.copy(alpha = 0.9f)
+        ),
+        start = Offset(0f, 0f),
+        end = Offset(500f, 500f) // diagonal gradient
+    )
 
     Surface(
-        color = if (isSelected) Color(0xFF2196F3) else Color.White,
-        shape = RoundedCornerShape(10.dp),
-        shadowElevation = 1.dp,
+        color = if (isSelected) streakColor.copy(alpha = 0.1f) else Color.White,
+        shape = RoundedCornerShape(12.dp),
+        shadowElevation = 4.dp,
         border = BorderStroke(
-            1.dp,
-            if (isSelected) Color.Blue else Color.LightGray
+            width = 2.dp,
+            brush = gradientBrush
         ),
         tonalElevation = 8.dp,
         modifier = Modifier
@@ -396,13 +377,12 @@ fun Streaks(
                 onClick = {
                     if (inSelectionMode) {
                         viewModel.toggleSelection(streak.streakId)
-                    }
-
-                    else {
-                            context.startActivity(Intent(context, StreakDetailsActivity::class.java).apply {
-                                putExtra("streakId" , streak.streakId)
+                    } else {
+                        context.startActivity(
+                            Intent(context, StreakDetailsActivity::class.java).apply {
+                                putExtra("streakId", streak.streakId)
                             }
-                            )
+                        )
                     }
                 },
                 onLongClick = {
@@ -413,7 +393,7 @@ fun Streaks(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .padding(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -422,14 +402,15 @@ fun Streaks(
                 Column {
                     Text(
                         streak.streakName,
-                        Modifier.padding(bottom = 12.dp),
+                        modifier = Modifier.padding(bottom = 12.dp),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 25.sp
+                        fontSize = 26.sp,
+                        color = streakColor // 👈 Streak name color
                     )
 
                     Text(
                         viewModel.nextCount(streak),
-                        Modifier.padding(bottom = 12.dp),
+                        modifier = Modifier.padding(bottom = 12.dp),
                         fontSize = 15.sp,
                         color = Color.Gray
                     )
@@ -438,10 +419,10 @@ fun Streaks(
                 Box(
                     modifier = Modifier
                         .size(55.dp)
-                        .clip(shape = CircleShape)
+                        .clip(CircleShape)
                         .border(
                             width = 3.dp,
-                            color = Color(streak.colorValue.toULong()),
+                            brush = gradientBrush, // 👈 Gradient border for circle too
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -450,13 +431,14 @@ fun Streaks(
                         viewModel.calculateStreakCount(streak).toString(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
-                        color = Color(streak.colorValue.toULong())
+                        color = streakColor
                     )
                 }
             }
         }
     }
 }
+
 
 
 @OptIn(ExperimentalFoundationApi::class)

@@ -134,7 +134,7 @@ fun StreakDetailScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         s.streakName,
-                        fontSize = 28.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -142,7 +142,9 @@ fun StreakDetailScreen(
                 // Frequency
                 Text(
                     "Frequency: ${s.frequency.name.lowercase().replaceFirstChar { it.uppercase() }}",
-                    fontSize = 18.sp
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -150,24 +152,24 @@ fun StreakDetailScreen(
                 // Start date
                 Text(
                     "Start Date: ${s.startDate}",
-                    fontSize = 18.sp
-                )
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // End date
                 Text(
                     "End Date: ${s.endDate}",
-                    fontSize = 18.sp
-                )
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Current count
                 Text(
                     "Current Count: ${s.count}",
-                    fontSize = 18.sp
-                )
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -181,8 +183,8 @@ fun StreakDetailScreen(
                 // Reminder
                 Text(
                     "Reminder Time Selected: ${s.reminderTime}",
-                    fontSize = 18.sp
-                )
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -196,7 +198,7 @@ fun StreakDetailScreen(
                         context.startActivity(intent)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(s.colorValue.toULong()))
                 ) {
                     Text("Edit Streak", color = Color.White)
                 }
