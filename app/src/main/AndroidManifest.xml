@@ -40,7 +40,6 @@
             android:name=".MainActivity"
             android:exported="true" />
 
-        <receiver android:name=".View.NotificationScreens.ReminderReceiver" />
 
     </application>
 

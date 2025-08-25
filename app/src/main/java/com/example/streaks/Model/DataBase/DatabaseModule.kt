@@ -29,6 +29,12 @@ object DatabaseModule {
     fun provideStreakDao(database: StreakDataBase): StreakDao {
         return database.streakDao()
     }
+
+    @Provides
+    fun provideNotificationDao(database: StreakDataBase): NotificationDao {
+        return database.notificationDao()
+    }
+
 }
 
 

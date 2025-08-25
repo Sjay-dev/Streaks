@@ -18,6 +18,8 @@ abstract class StreakDataBase : RoomDatabase() {
 
 
     abstract fun streakDao(): StreakDao
+    abstract fun notificationDao(): NotificationDao
+
 
     companion object {
         @Volatile
