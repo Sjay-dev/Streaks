@@ -97,7 +97,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
-private val CHANNEL_ID = "my_channel_id"
 
 @AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
@@ -199,50 +198,67 @@ fun scaffoldScreen(
 
     Scaffold(
         topBar = {
-            if (selectedStreaks.isNotEmpty()) {
-                TopAppBar(
-                    title = { Text("${selectedStreaks.size} selected") },
-                    actions = {
-                        IconButton(onClick = {showDeleteDialog = true}) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
-                        }
-                        IconButton(onClick = { viewModel.clearSelection() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Cancel")
-                        }
-                    }
-                )
-            } else {
-                Surface(
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .fillMaxWidth(),
-                    color = Color.White,
-                    tonalElevation = 15.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "$greetings, $userName",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(3)
+            when (pagerState.currentPage) {
+                0 -> {
+                    if (selectedStreaks.isNotEmpty()) {
+                        TopAppBar(
+                            title = { Text("${selectedStreaks.size} selected") },
+                            actions = {
+                                IconButton(onClick = { showDeleteDialog = true }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                }
+                                IconButton(onClick = { viewModel.clearSelection() }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Cancel")
+                                }
                             }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings"
-                            )
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier
+                                .statusBarsPadding()
+                                .fillMaxWidth(),
+                            color = Color.White,
+                            tonalElevation = 15.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "$greetings, $userName",
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                IconButton(onClick = {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(2) // move to Settings
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "Settings"
+                                    )
+                                }
+                            }
                         }
                     }
+                }
+
+                1 -> {
+                    TopAppBar(
+                        title = { Text("Notifications") }
+                    )
+                }
+
+                2 -> {
+                    // ✅ SettingsScreen TopBar
+                    TopAppBar(
+                        title = { Text("Settings") }
+                    )
                 }
             }
         },
@@ -281,12 +297,8 @@ fun scaffoldScreen(
         ) { page ->
             when (page) {
                 0 -> HomeScreen(paddingValues , viewModel)
-                1 -> NotificationScreen(
-                    onNotifyClick = {
-                        showNotification(context, "Manual Test 🚀")
-                    }
-                )
-                2 -> SettingsScreen()
+                1 -> NotificationScreen(paddingValues)
+                2 -> SettingsScreen(paddingValues)
             }
         }
 
