@@ -1,11 +1,14 @@
 package com.example.streaks.Model
 
-class NotificationRepository {
-    private val notifications = mutableListOf<NotificationModel>()
+import com.example.streaks.Model.DataBase.NotificationDao
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-    fun addNotification(notification: NotificationModel) {
-        notifications.add(0, notification) // insert latest at top
-    }
-
-    fun getAllNotifications(): List<NotificationModel> = notifications
+class NotificationRepository @Inject constructor(
+    private val dao: NotificationDao
+) {
+    fun getAllNotifications(): Flow<List<NotificationModel>> = dao.getAllNotifications()
+    suspend fun addNotification(notification: NotificationModel) = dao.insert(notification)
+    suspend fun deleteNotification(notification: NotificationModel) = dao.deleteNotification(notification)
+    suspend fun clearAll() = dao.clearAll()
 }

@@ -6,9 +6,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.streaks.Model.Converters
+import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.StreakModel
 
-@Database(entities = [StreakModel::class], version = 1, exportSchema = false)
+@Database(
+    entities = [StreakModel::class, NotificationModel::class],
+    version = 2,
+    exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class StreakDataBase : RoomDatabase() {
 

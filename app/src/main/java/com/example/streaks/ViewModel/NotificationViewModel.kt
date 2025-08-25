@@ -1,25 +1,40 @@
 package com.example.streaks.ViewModel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.NotificationRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class NotificationViewModel : ViewModel() {
+@HiltViewModel
+class NotificationViewModel @Inject constructor(
+    private val repo: NotificationRepository
+) : ViewModel() {
 
-    private val repository = NotificationRepository()
+    val notifications: StateFlow<List<NotificationModel>> =
+        repo.getAllNotifications()
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val _notifications = MutableStateFlow<List<NotificationModel>>(emptyList())
-    val notifications: StateFlow<List<NotificationModel>> = _notifications
+    fun addNotification(notification: NotificationModel) {
+        viewModelScope.launch {
+            repo.addNotification(notification)
+        }
+    }
 
-    fun addNotification(title: String, message: String) {
-        val notification = NotificationModel(
-            id = _notifications.value.size + 1,
-            title = title,
-            message = message
-        )
-        repository.addNotification(notification)
-        _notifications.value = repository.getAllNotifications()
+    fun clearAll() {
+        viewModelScope.launch {
+            repo.clearAll()
+        }
+    }
+
+    fun deleteNotification(notification: NotificationModel) {
+        viewModelScope.launch {
+            repo.deleteNotification(notification)
+        }
     }
 }
