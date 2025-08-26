@@ -11,7 +11,7 @@ import com.example.streaks.Model.StreakModel
 
 @Database(
     entities = [StreakModel::class, NotificationModel::class],
-    version = 2,
+    version = 1,
     exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class StreakDataBase : RoomDatabase() {

@@ -27,7 +27,6 @@ data class StreakModel(
     val endDate: LocalDate = LocalDate.now().plusDays(30),
 
     val count: Int = 0 ,
-
     val reminderTime: LocalTime? = null
 
 )
