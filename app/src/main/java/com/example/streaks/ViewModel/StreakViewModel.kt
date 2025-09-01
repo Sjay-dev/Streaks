@@ -12,7 +12,6 @@ import androidx.work.workDataOf
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.StreakRepository
-import com.example.streaks.View.NotificationScreens.ReminderWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -165,19 +164,13 @@ class StreakViewModel @Inject constructor
             targetDateTime = targetDateTime.plusDays(1)
         }
 
-        val delay = Duration.between(now, targetDateTime).toMillis()
+        Duration.between(now, targetDateTime).toMillis()
 
-        val data = workDataOf(
+        workDataOf(
             "streakId" to streakId,
             "streakName" to streakName
         )
 
-        val workRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
-            .setInputData(data)
-            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-            .build()
-
-        WorkManager.getInstance(context).enqueue(workRequest)
     }
 
 

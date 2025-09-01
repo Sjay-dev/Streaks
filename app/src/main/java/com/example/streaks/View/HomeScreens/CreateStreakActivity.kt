@@ -11,6 +11,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,8 +39,10 @@ import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -137,6 +140,10 @@ fun CreateStreakScreen() {
     var showTimePicker by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
     var tempTime by remember { mutableStateOf<LocalTime?>(null) }
+
+    var reminderType by remember { mutableStateOf("Notification") }
+    var soundAndVibration by remember { mutableStateOf(false) }
+
 
     //===KEYBOARD focusManager===
     val focusManager = LocalFocusManager.current
@@ -276,23 +283,92 @@ fun CreateStreakScreen() {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(reminderText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Reminder", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                     Switch(
                         checked = isReminder,
                         onCheckedChange = {
                             isReminder = it
-                            if (isReminder) {
-                                reminderText = "No Reminder"
+                            if (!isReminder) {
                                 selectedTime = null
-                            } else {
-                                tempTime = selectedTime ?: LocalTime.now()
-                                showTimePicker = true
-
+                                reminderText = "No Reminder"
+                                reminderType = "Notification"
+                                soundAndVibration = false
                             }
                         },
                         colors = SwitchDefaults.colors(checkedTrackColor = Color.Blue)
                     )
                 }
+
+                if (!isReminder) {
+                    Spacer(Modifier.height(12.dp))
+
+                    // Reminder Time
+                    Text("Reminder Time", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    CustomTimePicker(
+                        initialHour = selectedTime?.hour ?: LocalTime.now().hour,
+                        initialMinute = selectedTime?.minute ?: LocalTime.now().minute,
+                        onCancel = {
+                            isReminder = false
+                            selectedTime = null
+                            reminderText = "No Reminder"
+                        },
+                        onSave = { hour, minute ->
+                            selectedTime = LocalTime.of(hour, minute)
+                            reminderText = if (DateFormat.is24HourFormat(activity)) {
+                                "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                            } else {
+                                "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
+                            }
+                        }
+                    )
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Reminder Type
+                    Text("Reminder Type", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    // Notification (default)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = reminderType == "Notification",
+                            onClick = { reminderType = "Notification" }
+                        )
+                        Text("Notification")
+                    }
+
+                    // Sound + Vibration toggle
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        RadioButton(
+                            selected = reminderType == "SoundVibration",
+                            onClick = { reminderType = "SoundVibration" }
+                        )
+                        Text("Sound + Vibration", modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = soundAndVibration,
+                            onCheckedChange = {
+                                reminderType = "SoundVibration"
+                                soundAndVibration = it
+                            }
+                        )
+                    }
+
+                    // Silent notification
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = reminderType == "Silent",
+                            onClick = { reminderType = "Silent" }
+                        )
+                        Text("Silent Notification")
+                    }
+                }
+
+
 
                 // === START DATE PICKER ===
                 if (!isToday) {
@@ -626,6 +702,8 @@ fun LoopingNumberPicker(
     val repeatedItems = List(1000) { index -> items[index % items.size] }
     val middleIndex = repeatedItems.size / 2
 
+    val flingBehavior = rememberSnapFlingBehavior(lazyListState = state)
+
     LaunchedEffect(Unit) { state.scrollToItem(middleIndex) }
 
     Box(
@@ -636,6 +714,7 @@ fun LoopingNumberPicker(
     ) {
         LazyColumn(
             state = state,
+            flingBehavior = flingBehavior,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items(repeatedItems.size) { index ->

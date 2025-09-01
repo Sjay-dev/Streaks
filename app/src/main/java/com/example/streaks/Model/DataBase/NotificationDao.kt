@@ -12,8 +12,8 @@ interface NotificationDao {
     @Query("SELECT * FROM streak_notifications ORDER BY timestamp DESC")
     fun getAllNotifications(): Flow<List<NotificationModel>>
 
-@Delete
-suspend fun deleteNotification(notification: NotificationModel)
+    @Delete
+    suspend fun deleteNotification(notification: NotificationModel)
 
     @Query("DELETE FROM streak_notifications")
     suspend fun clearAll()

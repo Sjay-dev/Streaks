@@ -14,7 +14,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Streaks">
-
+        <activity
+            android:name=".View.HomeScreens.ReminderActivity"
+            android:exported="false" />
         <activity
             android:name=".View.HomeScreens.EditStreakActivity"
             android:exported="false" />
@@ -39,8 +41,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true" />
-
-
     </application>
 
 </manifest>

@@ -88,8 +88,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.View.NotificationScreens.NotificationScreen
-import com.example.streaks.View.NotificationScreens.createNotificationChannel
-import com.example.streaks.View.NotificationScreens.showNotification
+
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -114,7 +113,6 @@ class HomeScreenActivity : ComponentActivity() {
         }
 
         // Create notification channel
-        createNotificationChannel(context = this)
 
         setContent {
 

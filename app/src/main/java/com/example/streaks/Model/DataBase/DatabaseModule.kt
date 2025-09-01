@@ -20,8 +20,7 @@ object DatabaseModule {
     ): StreakDataBase {
         return Room.databaseBuilder(
             context,
-            StreakDataBase::class.java,
-            "streaks_db"
+            StreakDataBase::class.java, "streaks_db"
         ).build()
     }
 

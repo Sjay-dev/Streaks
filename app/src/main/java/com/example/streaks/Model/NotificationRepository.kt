@@ -7,9 +7,7 @@ import javax.inject.Inject
 class NotificationRepository @Inject constructor(
     private val dao: NotificationDao
 ) {
-    fun getAllNotifications(): Flow<List<NotificationModel>> {
-        return dao.getAllNotifications()
-    }
+    fun getAllNotifications(): Flow<List<NotificationModel>> = dao.getAllNotifications()
 
     suspend fun addNotification(notification: NotificationModel){
         dao.insert(notification)
