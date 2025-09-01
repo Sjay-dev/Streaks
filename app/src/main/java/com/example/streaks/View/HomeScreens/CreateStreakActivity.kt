@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -136,10 +137,12 @@ fun CreateStreakScreen() {
 
     //=== Reminder values ===
     var isReminder by remember { mutableStateOf(true) }
-    var reminderText by remember { mutableStateOf("No Reminder") }
-    var showTimePicker by remember { mutableStateOf(false) }
+    var reminderText by remember { mutableStateOf("No Reminder?") }
+    var showTimePicker by remember { mutableStateOf(true) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var confirmedSelectedTime by remember { mutableStateOf<LocalTime?>(null) }
     var tempTime by remember { mutableStateOf<LocalTime?>(null) }
+    var showBox by remember { mutableStateOf(false) }
 
     var reminderType by remember { mutableStateOf("Notification") }
     var soundAndVibration by remember { mutableStateOf(false) }
@@ -283,95 +286,32 @@ fun CreateStreakScreen() {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Reminder", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text(reminderText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+
                     Switch(
                         checked = isReminder,
                         onCheckedChange = {
                             isReminder = it
-                            if (!isReminder) {
-                                selectedTime = null
-                                reminderText = "No Reminder"
-                                reminderType = "Notification"
-                                soundAndVibration = false
+                            if(it){
+                                reminderText = (confirmedSelectedTime ?: "No Reminder?") as String
                             }
+                            else{
+                                reminderText = ""
+                            }
+
+
                         },
                         colors = SwitchDefaults.colors(checkedTrackColor = Color.Blue)
                     )
                 }
 
-                if (!isReminder) {
-                    Spacer(Modifier.height(12.dp))
 
-                    // Reminder Time
-                    Text("Reminder Time", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-
-                    CustomTimePicker(
-                        initialHour = selectedTime?.hour ?: LocalTime.now().hour,
-                        initialMinute = selectedTime?.minute ?: LocalTime.now().minute,
-                        onCancel = {
-                            isReminder = false
-                            selectedTime = null
-                            reminderText = "No Reminder"
-                        },
-                        onSave = { hour, minute ->
-                            selectedTime = LocalTime.of(hour, minute)
-                            reminderText = if (DateFormat.is24HourFormat(activity)) {
-                                "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
-                            } else {
-                                "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-                            }
-                        }
-                    )
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // Reminder Type
-                    Text("Reminder Type", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-
-                    // Notification (default)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = reminderType == "Notification",
-                            onClick = { reminderType = "Notification" }
-                        )
-                        Text("Notification")
-                    }
-
-                    // Sound + Vibration toggle
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        RadioButton(
-                            selected = reminderType == "SoundVibration",
-                            onClick = { reminderType = "SoundVibration" }
-                        )
-                        Text("Sound + Vibration", modifier = Modifier.weight(1f))
-                        Switch(
-                            checked = soundAndVibration,
-                            onCheckedChange = {
-                                reminderType = "SoundVibration"
-                                soundAndVibration = it
-                            }
-                        )
-                    }
-
-                    // Silent notification
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = reminderType == "Silent",
-                            onClick = { reminderType = "Silent" }
-                        )
-                        Text("Silent Notification")
-                    }
-                }
 
 
 
                 // === START DATE PICKER ===
                 if (!isToday) {
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -529,35 +469,99 @@ fun CreateStreakScreen() {
                     }
                 }
 
-                // === CUSTOM TIME PICKER DIALOG ===
-                if (showTimePicker) {
-                    AlertDialog(
-                        onDismissRequest = {
-                            showTimePicker = false
-                            isReminder = false // reset switch if dismissed
-                        },
-                        confirmButton = {},
-                        text = {
-                            CustomTimePicker(
-                                initialHour = tempTime?.hour ?: LocalTime.now().hour,
-                                initialMinute = tempTime?.minute ?: LocalTime.now().minute,
-                                onCancel = {
-                                    showTimePicker = false
-                                    isReminder = false // reset switch on cancel
-                                },
-                                onSave = { hour, minute ->
-                                    selectedTime = LocalTime.of(hour, minute)
-                                    reminderText = if (DateFormat.is24HourFormat(activity)) {
-                                        "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
-                                    } else {
-                                        "Remind @ ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-                                    }
-                                    showTimePicker = false
+                // === CUSTOM TIME PICKER ===
+                if (!isReminder) {
+                    if (showBox) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF0F0F0))
+                                .clickable {
+                                    showTimePicker = true
+                                }
+                                .padding(16.dp)
+                        ) {
+                            val displayText = confirmedSelectedTime?.let {
+                                "Tap to Pick another reminder time"
+                            } ?: "Tap to select a reminder time"
+
+                            Text(displayText)
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    if (showTimePicker) {
+                        CustomTimePicker(
+                            initialHour = tempTime?.hour ?: LocalTime.now().hour,
+                            initialMinute = tempTime?.minute ?: LocalTime.now().minute,
+                            onCancel = {
+                                showTimePicker = false
+                                showBox = confirmedSelectedTime != null
+                                tempTime = null
+                                if (confirmedSelectedTime == null) {
+                                    isReminder = false
+                                    reminderText = "No Reminder"
+                                }
+                            },
+                            onSave = { hour, minute ->
+                                tempTime = LocalTime.of(hour, minute)
+                                confirmedSelectedTime = tempTime
+                                reminderText = if (DateFormat.is24HourFormat(activity)) {
+                                    "Remind @ ${confirmedSelectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                                } else {
+                                    "Remind @ ${confirmedSelectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
+                                }
+                                showTimePicker = false
+                                showBox = true
+                            }
+                        )
+
+                        // === Reminder Type (unchanged) ===
+                        Text("Reminder Type", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = reminderType == "Notification",
+                                onClick = { reminderType = "Notification" }
+                            )
+                            Text("Notification")
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
+                                selected = reminderType == "SoundVibration",
+                                onClick = { reminderType = "SoundVibration" }
+                            )
+                            Text("Sound + Vibration", modifier = Modifier.weight(1f))
+                            Switch(
+                                checked = soundAndVibration,
+                                onCheckedChange = {
+                                    reminderType = "SoundVibration"
+                                    soundAndVibration = it
                                 }
                             )
                         }
-                    )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = reminderType == "Silent",
+                                onClick = { reminderType = "Silent" }
+                            )
+                            Text("Silent Notification")
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
                 }
+
+
+
                 Spacer(modifier = Modifier.weight(1f))
                 val context = LocalContext.current
 
@@ -589,7 +593,6 @@ fun CreateStreakScreen() {
 }
 
 // ========================= CUSTOM TIME PICKER =========================
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CustomTimePicker(
     initialHour: Int,
@@ -702,24 +705,30 @@ fun LoopingNumberPicker(
     val repeatedItems = List(1000) { index -> items[index % items.size] }
     val middleIndex = repeatedItems.size / 2
 
+    // Snap fling behavior
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = state)
 
-    LaunchedEffect(Unit) { state.scrollToItem(middleIndex) }
+    // Scroll to middle initially
+    LaunchedEffect(Unit) {
+        state.scrollToItem(middleIndex)
+    }
 
     Box(
         modifier = Modifier
-            .height(140.dp)
+            .height(140.dp) // enough to show 3–5 items
             .width(80.dp),
         contentAlignment = Alignment.Center
     ) {
         LazyColumn(
             state = state,
             flingBehavior = flingBehavior,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             items(repeatedItems.size) { index ->
                 val value = repeatedItems[index]
-                val isSelected = state.firstVisibleItemIndex == index
+                val isSelected =
+                    state.firstVisibleItemIndex + (state.layoutInfo.visibleItemsInfo.size / 2) == index
+
                 Text(
                     text = String.format("%02d", value),
                     fontSize = if (isSelected) 36.sp else 20.sp,
@@ -731,11 +740,19 @@ fun LoopingNumberPicker(
         }
     }
 
-    LaunchedEffect(state.firstVisibleItemIndex) {
-        val actualValue = repeatedItems[state.firstVisibleItemIndex]
-        onValueChange(actualValue)
+    // Report value when snapped
+    LaunchedEffect(state.isScrollInProgress) {
+        if (!state.isScrollInProgress) {
+            val centerIndex =
+                state.firstVisibleItemIndex + (state.layoutInfo.visibleItemsInfo.size / 2)
+            val actualValue = repeatedItems.getOrNull(centerIndex)
+            if (actualValue != null) {
+                onValueChange(actualValue)
+            }
+        }
     }
 }
+
 
 
 
