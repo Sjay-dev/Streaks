@@ -27,12 +27,21 @@ data class StreakModel(
     val endDate: LocalDate = LocalDate.now().plusDays(30),
 
     val count: Int = 0 ,
-    val reminderTime: LocalTime? = null
+
+    val reminderTime: LocalTime? = null,
+
+    val notificationType: NotificationType = NotificationType.DEFAULT
 
 )
 
 enum class Frequency {
     DAILY, WEEKLY, MONTHLY
+}
+
+enum class NotificationType {
+    DEFAULT,
+    SILENT,
+    ALARM
 }
 
 class Converters {

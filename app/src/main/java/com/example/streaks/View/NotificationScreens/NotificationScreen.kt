@@ -38,7 +38,6 @@ fun NotificationScreen(
     paddingValues: PaddingValues,
     viewModel: NotificationViewModel = hiltViewModel()
 ) {
-    // Collect notifications from the ViewModel (DB-backed via Flow)
     val notifications by viewModel.notifications.collectAsState()
 
     Column(

@@ -26,6 +26,10 @@ class StreakRepository @Inject constructor(
     suspend fun getStreakById(id: Int): StreakModel? {
         return dao.getStreakById(id)
     }
+
+    fun getAllWithReminders(): Flow<List<StreakModel>>{
+        return  dao.getAllWithReminders()
+    }
 }
 
 

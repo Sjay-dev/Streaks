@@ -61,6 +61,10 @@ class StreakViewModel @Inject constructor
         }
     }
 
+    val reminderStreaks : StateFlow<List<StreakModel>> = repository.getAllWithReminders().stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
+        )
+
 
 
     // === Calculations ===
@@ -155,23 +159,23 @@ class StreakViewModel @Inject constructor
     }
 
     // FOR REMINDERS
-    fun scheduleNotification(context: Context, streakId: Int, streakName: String, reminderTime: LocalTime) {
-        val now = LocalDateTime.now()
-        var targetDateTime = LocalDateTime.of(LocalDate.now(), reminderTime)
-
-        // If selected time already passed, schedule for tomorrow
-        if (targetDateTime.isBefore(now)) {
-            targetDateTime = targetDateTime.plusDays(1)
-        }
-
-        Duration.between(now, targetDateTime).toMillis()
-
-        workDataOf(
-            "streakId" to streakId,
-            "streakName" to streakName
-        )
-
-    }
+//    fun scheduleNotification(context: Context, streakId: Int, streakName: String, reminderTime: LocalTime) {
+//        val now = LocalDateTime.now()
+//        var targetDateTime = LocalDateTime.of(LocalDate.now(), reminderTime)
+//
+//        // If selected time already passed, schedule for tomorrow
+//        if (targetDateTime.isBefore(now)) {
+//            targetDateTime = targetDateTime.plusDays(1)
+//        }
+//
+//        Duration.between(now, targetDateTime).toMillis()
+//
+//        workDataOf(
+//            "streakId" to streakId,
+//            "streakName" to streakName
+//        )
+//
+//    }
 
 
 

@@ -23,10 +23,12 @@ interface StreakDao {
     @Query("SELECT * FROM streaks")
      fun getAllStreaks(): Flow<List<StreakModel>>
 
-
-
     @Query("SELECT * FROM streaks WHERE streakId = :id")
     suspend fun getStreakById(id: Int): StreakModel?
+
+    @Query("SELECT * FROM streaks WHERE reminderTime IS NOT NULL")
+     fun getAllWithReminders(): Flow< List<StreakModel>>
+
 }
 
 
