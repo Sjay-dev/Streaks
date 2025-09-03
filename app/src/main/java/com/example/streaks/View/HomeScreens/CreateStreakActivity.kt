@@ -570,7 +570,7 @@ fun CreateStreakScreen() {
 
 
                 Spacer(modifier = Modifier.weight(1f))
-                val context = LocalContext.current
+                LocalContext.current
 
                 // === CREATE BUTTON ===
                 Button(
@@ -585,7 +585,6 @@ fun CreateStreakScreen() {
                                 reminderTime = selectedTime
                             )
                         )
-                        viewModel.scheduleNotification(context , 0 , streakName , selectedTime!! )
                         activity.finish()
                     },
                     modifier = Modifier.fillMaxWidth(),

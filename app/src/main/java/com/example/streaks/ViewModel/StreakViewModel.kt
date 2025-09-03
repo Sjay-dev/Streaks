@@ -61,10 +61,21 @@ class StreakViewModel @Inject constructor
         }
     }
 
-    val reminderStreaks : StateFlow<List<StreakModel>> = repository.getAllWithReminders().stateIn(
+    val getReminderStreaks : StateFlow<List<StreakModel>> = repository.getAllWithReminders().stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
         )
 
+    fun clearAllReminders() {
+        viewModelScope.launch {
+            repository.clearAllReminders()
+        }
+    }
+
+    fun removeReminder(streak: StreakModel) {
+        viewModelScope.launch {
+            repository.removeReminder(streak)
+        }
+    }
 
 
     // === Calculations ===

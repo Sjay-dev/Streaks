@@ -66,9 +66,9 @@ object NotificationHelper {
         return NotificationCompat.Builder(context, channelFor(streak.notificationType))
             .setContentTitle(streak.streakName)
             .setContentText("It’s time to keep your streak alive!")
-            .setSmallIcon(R.drawable.ic_notification)
-            .addAction(R.drawable.ic_check, "Mark Done", markDonePending)
-            .addAction(R.drawable.ic_snooze, "Snooze", snoozePending)
+            .setSmallIcon(R.drawable.arrow_back_24px)
+            .addAction(R.drawable.ic_launcher_foreground, "Mark Done", markDonePending)
+            .addAction(R.drawable.ic_launcher_background, "Snooze", snoozePending)
             .setAutoCancel(true)
             .build()
     }

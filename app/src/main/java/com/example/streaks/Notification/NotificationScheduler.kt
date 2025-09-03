@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import java.time.LocalDateTime

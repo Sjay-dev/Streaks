@@ -20,6 +20,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +41,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
@@ -64,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +76,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -210,7 +217,8 @@ fun scaffoldScreen(
                                 }
                             }
                         )
-                    } else {
+                    }
+                    else {
                         Surface(
                             modifier = Modifier
                                 .statusBarsPadding()
@@ -233,7 +241,7 @@ fun scaffoldScreen(
 
                                 IconButton(onClick = {
                                     coroutineScope.launch {
-                                        pagerState.animateScrollToPage(2) // move to Settings
+                                        pagerState.animateScrollToPage(2)
                                     }
                                 }) {
                                     Icon(
@@ -247,34 +255,81 @@ fun scaffoldScreen(
                 }
 
                 1 -> {
-                    TopAppBar(
-                        title = { Text("Notifications") }
-                    )
+                    Surface(
+                        modifier = Modifier
+                            .statusBarsPadding()
+                            .fillMaxWidth(),
+                        color = Color.White,
+                        tonalElevation = 15.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(15.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Notification",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
 
                 2 -> {
-                    // ✅ SettingsScreen TopBar
-                    TopAppBar(
-                        title = { Text("Settings") }
-                    )
+                    Surface(
+                        modifier = Modifier
+                            .statusBarsPadding()
+                            .fillMaxWidth(),
+                        color = Color.White,
+                        tonalElevation = 15.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(15.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Settings",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         },
 
         floatingActionButton = {
             if (selectedStreaks.isEmpty()) {
-                FloatingActionButton(
-                    onClick = {
-                        context.startActivity(
-                            Intent(context, CreateStreakActivity::class.java)
+                when (pagerState.currentPage) {
+                    0 -> {
+                        // ✅ Home FAB → Add Streak
+                        FloatingActionButton(
+                            onClick = {
+                                context.startActivity(
+                                    Intent(context, CreateStreakActivity::class.java)
+                                )
+                            },
+                            containerColor = Color.Blue,
+                            contentColor = Color.White,
+                            shape = CircleShape,
+                            modifier = Modifier.padding(end = 15.dp)
+                        ) {
+                            Icon(Icons.Default.Add, "Add streak")
+                        }
+                    }
+
+                    1 -> {
+                        NotificationFab(
+                            onMarkAllDone = { },
+                            onCancelAll   = { }
                         )
-                    },
-                    containerColor = Color.Blue,
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                    modifier = Modifier.padding(end = 15.dp)
-                ) {
-                    Icon(Icons.Default.Add, "Add tasks")
+                    }
                 }
             }
         },
@@ -327,7 +382,8 @@ fun HomeScreen(
                 color = Color.Blue
             )
         }
-    } else {
+    }
+    else {
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -415,7 +471,7 @@ fun Streaks(
                         modifier = Modifier.padding(bottom = 12.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 26.sp,
-                        color = streakColor // 👈 Streak name color
+                        color = streakColor
                     )
 
                     Text(
@@ -451,7 +507,6 @@ fun Streaks(
 
 
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BottomNavigationBar(
     pagerState: PagerState,
@@ -481,6 +536,46 @@ fun BottomNavigationBar(
     }
 }
 
+@Composable
+fun NotificationFab(
+    onMarkAllDone: () -> Unit,
+    onCancelAll: () -> Unit,
+) {
+    var isMarkDone by rememberSaveable { mutableStateOf(true) }
+    val haptics = LocalHapticFeedback.current
+
+    Surface(
+        modifier = Modifier
+            .padding(end = 15.dp)
+            .size(56.dp)
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {
+                    if (isMarkDone) onMarkAllDone() else onCancelAll()
+                },
+                onLongClick = {
+                    isMarkDone = !isMarkDone
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+            ),
+        shape = CircleShape,
+        tonalElevation = 6.dp,
+        shadowElevation = 6.dp,
+        color = if (isMarkDone) Color(0xFF4CAF50) else Color.Red // green ↔ red
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isMarkDone) Icons.Default.Check else Icons.Default.Close,
+                contentDescription = if (isMarkDone) "Mark Done" else "Cancel",
+                tint = Color.White
+            )
+        }
+    }
+}
 
 
 

@@ -6,6 +6,7 @@ import android.content.Intent
 import com.example.streaks.Model.DataBase.StreakDataBase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class BootReceiver : BroadcastReceiver() {
@@ -13,8 +14,9 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val db = StreakDataBase.getDatabase(context)
             CoroutineScope(Dispatchers.IO).launch {
-                val streaks = db.streakDao().getAllWithReminders()
-                streaks.forEach { NotificationScheduler.scheduleNext(context, it) }
+                db.streakDao().getAllWithReminders().first().forEach { streak ->
+                    NotificationScheduler.scheduleNext(context, streak)
+                }
             }
         }
     }
