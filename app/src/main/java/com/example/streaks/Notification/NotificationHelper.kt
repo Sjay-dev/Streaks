@@ -47,29 +47,40 @@ object NotificationHelper {
         }
 
     fun buildNotification(context: Context, streak: StreakModel): Notification {
+        // ✅ Mark Done intent
         val markDoneIntent = Intent(context, NotificationActionReceiver::class.java).apply {
-            action = "ACTION_MARK_DONE"
+            action = NotificationActionReceiver.ACTION_MARK_DONE
             putExtra("streakId", streak.streakId)
         }
-        val snoozeIntent = Intent(context, NotificationActionReceiver::class.java).apply {
-            action = "ACTION_SNOOZE"
+
+        // ❌ End Streak intent
+        val endStreakIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_END_STREAK
             putExtra("streakId", streak.streakId)
         }
 
         val markDonePending = PendingIntent.getBroadcast(
-            context, streak.streakId, markDoneIntent, PendingIntent.FLAG_IMMUTABLE
+            context,
+            streak.streakId, // unique requestCode
+            markDoneIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val snoozePending = PendingIntent.getBroadcast(
-            context, streak.streakId + 1000, snoozeIntent, PendingIntent.FLAG_IMMUTABLE
+
+        val endStreakPending = PendingIntent.getBroadcast(
+            context,
+            streak.streakId + 1000, // different requestCode so they don’t clash
+            endStreakIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         return NotificationCompat.Builder(context, channelFor(streak.notificationType))
             .setContentTitle(streak.streakName)
             .setContentText("It’s time to keep your streak alive!")
-            .setSmallIcon(R.drawable.arrow_back_24px)
-            .addAction(R.drawable.ic_launcher_foreground, "Mark Done", markDonePending)
-            .addAction(R.drawable.ic_launcher_background, "Snooze", snoozePending)
+            .setSmallIcon(R.drawable.arrow_back_24px) // use your app’s bell/check icon
+            .addAction(R.drawable.monitoring_24px, "Mark Done", markDonePending)
+            .addAction(R.drawable.ic_launcher_background, "End Streak", endStreakPending)
             .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // ensures it shows on time
             .build()
     }
 }

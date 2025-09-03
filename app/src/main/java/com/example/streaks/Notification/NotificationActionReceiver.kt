@@ -16,14 +16,14 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         when (action) {
             ACTION_MARK_DONE -> {
-                // TODO: update streak progress in DB
+                // TODO: increment streak progress in DB
                 Toast.makeText(context, "Streak marked as done!", Toast.LENGTH_SHORT).show()
                 cancelNotification(context, streakId)
             }
 
-            ACTION_SNOOZE -> {
-                // TODO: reschedule notification for +10 minutes or user-defined snooze
-                Toast.makeText(context, "Reminder snoozed!", Toast.LENGTH_SHORT).show()
+            ACTION_END_STREAK -> {
+                // TODO: update DB to end/cancel this streak
+                Toast.makeText(context, "Streak ended!", Toast.LENGTH_SHORT).show()
                 cancelNotification(context, streakId)
             }
         }
@@ -32,11 +32,11 @@ class NotificationActionReceiver : BroadcastReceiver() {
     @SuppressLint("ServiceCast")
     private fun cancelNotification(context: Context, streakId: Int) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.cancel(streakId) // use streakId as notificationId
+        manager.cancel(streakId)
     }
 
     companion object {
         const val ACTION_MARK_DONE = "com.yourapp.ACTION_MARK_DONE"
-        const val ACTION_SNOOZE = "com.yourapp.ACTION_SNOOZE"
+        const val ACTION_END_STREAK = "com.yourapp.ACTION_END_STREAK"
     }
 }

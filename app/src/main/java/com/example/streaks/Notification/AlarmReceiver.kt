@@ -11,22 +11,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
-    @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
-        val streakId = intent.getIntExtra("streakId", -1)
-        if (streakId == -1) return
-
-        val db = StreakDataBase.getDatabase(context) // ✅ use your StreakDataBase
+        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
-            val streak = db.streakDao().getStreakById(streakId) ?: return@launch
+            try {
+                val streakId = intent.getIntExtra("streakId", -1)
+                if (streakId != -1) {
+                    val db = StreakDataBase.getDatabase(context)
+                    val streak = db.streakDao().getStreakById(streakId)
 
-            // Build and show notification
-            val notification = NotificationHelper.buildNotification(context, streak)
-            NotificationManagerCompat.from(context).notify(streak.streakId, notification)
+                    streak?.let {
+                        val notification = NotificationHelper.buildNotification(context, it)
 
-            // Reschedule the next notification based on frequency
-            NotificationScheduler.scheduleNext(context, streak)
+                        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                            NotificationManagerCompat.from(context)
+                                .notify(it.streakId, notification)
+                        }
+
+                        NotificationScheduler.scheduleNext(context, it)
+                    }
+                }
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 }
+
 
