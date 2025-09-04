@@ -69,6 +69,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -117,7 +118,6 @@ fun CreateStreakScreen() {
     var streakColor by remember { mutableStateOf(Color.Blue) }
     var frequency by remember { mutableStateOf(Frequency.DAILY) }
 
-    // Start date state
 
     //=== Start Date values ===
     var startDate by remember { mutableStateOf(LocalDate.now()) }
@@ -142,7 +142,6 @@ fun CreateStreakScreen() {
     var reminderText by remember { mutableStateOf("No Reminder?") }
     var showTimePicker by remember { mutableStateOf(true) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
-    var confirmedSelectedTime by remember { mutableStateOf<LocalTime?>(null) }
     var tempTime by remember { mutableStateOf<LocalTime?>(null) }
     var showBox by remember { mutableStateOf(false) }
 
@@ -167,10 +166,10 @@ fun CreateStreakScreen() {
                     modifier = Modifier
                         .statusBarsPadding()
                         .fillMaxWidth()
-                        .padding(top = 30.dp),
+                        .padding(top = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Create A New Streak", fontWeight = FontWeight.Bold, fontSize = 23.sp)
+                    Text("Create A New Streak", fontWeight = Bold, fontSize = 23.sp)
                     IconButton(onClick = { activity.finish() }, modifier = Modifier.align(Alignment.CenterStart)) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back_24px),
@@ -196,6 +195,7 @@ fun CreateStreakScreen() {
                     value = streakName,
                     onValueChange = { streakName = it },
                     label = { Text("Streak Name") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     textStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -240,7 +240,7 @@ fun CreateStreakScreen() {
                             modifier = Modifier.padding(end = 10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (frequency == option) streakColor else Color.LightGray,
-                                contentColor = if (frequency == option) if(streakColor == Color.Yellow) Color.Black else Color.White else Color.Black
+                                contentColor = if (frequency == option) if (streakColor == Color.Yellow) Color.Black else Color.White else Color.Black
                             )
                         ) {
                             Text(option.name.lowercase().replaceFirstChar { it.uppercase() })
@@ -296,19 +296,30 @@ fun CreateStreakScreen() {
                         checked = isReminder,
                         onCheckedChange = {
                             isReminder = it
-                            if(isReminder){
+                            if (isReminder) {
                                 reminderText = "No Reminder?"
-                            }
-                            else{
-                                if(confirmedSelectedTime == null){
+                            } else {
+                                if (selectedTime == null) {
                                     reminderText = "No Reminder?"
-                                }
-                                else{
+                                } else {
                                     reminderText = if (DateFormat.is24HourFormat(activity)) {
-                                        "Remind at ${confirmedSelectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                                        "Remind at ${
+                                            selectedTime!!.format(
+                                                DateTimeFormatter.ofPattern(
+                                                    "HH:mm"
+                                                )
+                                            )
+                                        }"
                                     } else {
-                                        "Remind at ${confirmedSelectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-                                    }   }
+                                        "Remind at ${
+                                            selectedTime!!.format(
+                                                DateTimeFormatter.ofPattern(
+                                                    "hh:mm a"
+                                                )
+                                            )
+                                        }"
+                                    }
+                                }
                             }
 
 
@@ -370,7 +381,7 @@ fun CreateStreakScreen() {
                                 confirmedStartDate = null
                                 isToday = true
                             }) {
-                                Text("Cancel" , color = streakColor)
+                                Text("Cancel", color = streakColor)
                             }
 
                             Spacer(modifier = Modifier.size(10.dp))
@@ -385,7 +396,7 @@ fun CreateStreakScreen() {
                                 }
                                 showStartDatePicker = false
                             }) {
-                                Text("OK" , color = streakColor)
+                                Text("OK", color = streakColor)
                             }
                         }
                     }
@@ -449,7 +460,7 @@ fun CreateStreakScreen() {
                                 confirmedEndDate = null
                                 isEternity = true
                             }) {
-                                Text("Cancel" , color = streakColor)
+                                Text("Cancel", color = streakColor)
                             }
 
                             Spacer(modifier = Modifier.size(10.dp))
@@ -464,7 +475,7 @@ fun CreateStreakScreen() {
                                 }
                                 showEndDatePicker = false
                             }) {
-                                Text("OK" , color = streakColor)
+                                Text("OK", color = streakColor)
                             }
                         }
                     }
@@ -491,7 +502,7 @@ fun CreateStreakScreen() {
                                 }
                                 .padding(16.dp)
                         ) {
-                            val displayText = confirmedSelectedTime?.let {
+                            val displayText = selectedTime?.let {
                                 "Tap to Pick another reminder time"
                             } ?: "Tap to select a reminder time"
 
@@ -502,26 +513,21 @@ fun CreateStreakScreen() {
                     Spacer(Modifier.height(10.dp))
 
                     if (showTimePicker) {
-                        CustomTimePicker(
-                            initialHour = confirmedSelectedTime?.hour ?: 3,
-                            initialMinute = confirmedSelectedTime?.minute ?: 24,
+                        viewModel.CustomTimePicker(
+                            initialHour = selectedTime?.hour ?: 3,
+                            initialMinute = selectedTime?.minute ?: 24,
                             onCancel = {
-                                showTimePicker = false
-                                showBox = confirmedSelectedTime != null
-                                tempTime = null
-                                if (confirmedSelectedTime == null) {
-                                    isReminder = false
-                                    reminderText = "No Reminder"
-                                }
+                                if (selectedTime != null) showTimePicker = false else isReminder =
+                                    true
                             },
                             streakColor = streakColor,
                             onSave = { hour, minute ->
                                 tempTime = LocalTime.of(hour, minute)
-                                confirmedSelectedTime = tempTime
+                                selectedTime = tempTime
                                 reminderText = if (DateFormat.is24HourFormat(activity)) {
-                                    "Remind at ${confirmedSelectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                                    "Remind at ${selectedTime!!.format(DateTimeFormatter.ofPattern("HH:mm"))}"
                                 } else {
-                                    "Remind at ${confirmedSelectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
+                                    "Remind at ${selectedTime!!.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
                                 }
                                 showTimePicker = false
                                 showBox = true
@@ -532,36 +538,64 @@ fun CreateStreakScreen() {
                         Text("Reminder Type", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(8.dp))
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { reminderType = NotificationType.DEFAULT }
+                        ) {
                             RadioButton(
                                 selected = reminderType == NotificationType.DEFAULT,
-                                onClick = { reminderType = NotificationType.DEFAULT } ,
+                                onClick = { reminderType = NotificationType.DEFAULT },
                                 colors = RadioButtonDefaults.colors(selectedColor = streakColor)
-
                             )
-                            Text("System Notification")
+                            if (reminderType == NotificationType.DEFAULT) Text(
+                                "System Notification",
+                                fontSize = 15.sp,
+                                fontWeight = Bold
+                            )
+                            else Text("System Notification", fontSize = 15.sp)
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { reminderType = NotificationType.ALARM }
+                        ) {
                             RadioButton(
                                 selected = reminderType == NotificationType.ALARM,
-                                onClick = { reminderType = NotificationType.ALARM } ,
+                                onClick = { reminderType = NotificationType.ALARM },
                                 colors = RadioButtonDefaults.colors(selectedColor = streakColor)
 
                             )
-                            Text("Alarm Notification")
+                            if (reminderType == NotificationType.ALARM) Text(
+                                "Alarm Notification",
+                                fontSize = 15.sp,
+                                fontWeight = Bold
+                            )
+                            else Text("Alarm Notification", fontSize = 15.sp)
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable { reminderType = NotificationType.SILENT }
+                        ) {
                             RadioButton(
                                 selected = reminderType == NotificationType.SILENT,
-                                onClick = { reminderType = NotificationType.SILENT } ,
+                                onClick = { reminderType = NotificationType.SILENT },
                                 colors = RadioButtonDefaults.colors(
                                     selectedColor = streakColor
                                 )
 
                             )
-                            Text("Silent Notification")
+                            if (reminderType == NotificationType.SILENT) Text(
+                                "Silent Notification",
+                                fontSize = 15.sp,
+                                fontWeight = Bold
+                            )
+                            else Text("Silent Notification", fontSize = 15.sp)
                         }
                     }
 
@@ -582,180 +616,29 @@ fun CreateStreakScreen() {
                                 colorValue = streakColor.value.toLong(),
                                 frequency = frequency,
                                 startDate = startDate,
-                                endDate = endDate ,
+                                endDate = endDate,
                                 reminderTime = selectedTime,
                                 notificationType = reminderType
                             )
                         )
                         activity.finish()
                     },
+                    enabled = streakName.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = streakColor)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = streakColor
+
+                    )
                 ) {
                     Text("Create Streak", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 }
+
             }
         }
     }
 }
 
-// ========================= CUSTOM TIME PICKER =========================
-@Composable
-fun CustomTimePicker(
-    initialHour: Int,
-    initialMinute: Int,
-    streakColor : Color,
-    onCancel: () -> Unit,
-    onSave: (Int, Int) -> Unit
-) {
-    val context = LocalContext.current
-    val is24Hour = DateFormat.is24HourFormat(context)
-
-    var selectedHour by remember { mutableStateOf(initialHour) }
-    var selectedMinute by remember { mutableStateOf(initialMinute) }
-    var isAm by remember { mutableStateOf(initialHour < 12) }
-    val hours = if (is24Hour) (0..23).toList() else (1..12).toList()
-    val minutes = (0..59).toList()
-    val today = LocalDate.now()
-    val formattedDate = today.format(DateTimeFormatter.ofPattern("EEE, dd MMM"))
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            "Select Time",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = streakColor
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            LoopingNumberPicker(streakColor, hours, initialHour) { selectedHour = it }
-
-            Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = streakColor)
-
-            LoopingNumberPicker(streakColor , minutes, initialMinute) { selectedMinute = it }
-
-            if (!is24Hour) {
-                Column(
-                    modifier = Modifier.padding(start = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    TextButton(onClick = { isAm = true }) {
-                        Text(
-                            "AM",
-                            fontWeight = if (isAm) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isAm) streakColor else Color.Gray
-                        )
-                    }
-                    TextButton(onClick = { isAm = false }) {
-                        Text(
-                            "PM",
-                            fontWeight = if (!isAm) FontWeight.Bold else FontWeight.Normal,
-                            color = if (!isAm) streakColor else Color.Gray
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-        Text("Today - $formattedDate", color = Color.Gray, fontSize = 14.sp)
-
-        Spacer(Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TextButton(onClick = { onCancel() }) {
-                Text("Cancel", fontSize = 16.sp, color = Color.Black)
-            }
-            Button(
-                onClick = {
-                    val finalHour =
-                        if (is24Hour) selectedHour
-                        else if (isAm) selectedHour % 12
-                        else (selectedHour % 12) + 12
-                    onSave(finalHour, selectedMinute)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = streakColor)
-            ) {
-                Text("Save", fontSize = 16.sp, color = Color.White)
-            }
-        }
-    }
-}
-
-@Composable
-fun LoopingNumberPicker(
-    streakColor: Color,
-    items: List<Int>,
-    initialValue: Int,
-    onValueChange: (Int) -> Unit
-) {
-    val repeatedItems = List(1000) { index -> items[index % items.size] }
-    val middleIndex = repeatedItems.size / 2
-
-    val initialIndex = remember(initialValue) {
-        val safeValue = if (initialValue in items) initialValue else items.first()
-        val offset = items.indexOf(safeValue)
-        if (offset >= 0) middleIndex - (middleIndex % items.size) + offset else middleIndex
-    }
-
-    val state = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
-    val flingBehavior = rememberSnapFlingBehavior(lazyListState = state)
-
-    Box(
-        modifier = Modifier
-            .height(140.dp)
-            .width(80.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        LazyColumn(
-            state = state,
-            flingBehavior = flingBehavior,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            items(repeatedItems.size) { index ->
-                val value = repeatedItems[index]
-                val isSelected =
-                    state.firstVisibleItemIndex + (state.layoutInfo.visibleItemsInfo.size / 2) == index
-
-                Text(
-                    text = String.format("%02d", value),
-                    fontSize = if (isSelected) 36.sp else 20.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected)  streakColor else Color.Gray,
-                    modifier = Modifier.padding(vertical = 6.dp)
-                )
-            }
-        }
-    }
-
-    LaunchedEffect(state.isScrollInProgress) {
-        if (!state.isScrollInProgress) {
-            val centerIndex =
-                state.firstVisibleItemIndex + (state.layoutInfo.visibleItemsInfo.size / 2)
-            val actualValue = repeatedItems.getOrNull(centerIndex)
-            if (actualValue != null) {
-                onValueChange(actualValue)
-            }
-        }
-    }
-}
 
 
 
