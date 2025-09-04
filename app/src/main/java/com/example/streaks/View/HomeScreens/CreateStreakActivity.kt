@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.Frequency
+import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
@@ -145,7 +146,8 @@ fun CreateStreakScreen() {
     var tempTime by remember { mutableStateOf<LocalTime?>(null) }
     var showBox by remember { mutableStateOf(false) }
 
-    var reminderType by remember { mutableStateOf("Notification") }
+
+    var reminderType by remember { mutableStateOf(NotificationType.DEFAULT) }
 
 
     //===KEYBOARD focusManager===
@@ -153,7 +155,9 @@ fun CreateStreakScreen() {
 
     //===PRESET COLORS===
     val presetColors = listOf(Color.Red, Color.Blue, Color.Black, Color.Green, Color.Magenta)
+
     val frequencyOptions = Frequency.values()
+
 
     //===UI===//
     Scaffold(
@@ -530,31 +534,28 @@ fun CreateStreakScreen() {
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = reminderType == "Notification",
-                                onClick = { reminderType = "Notification" } ,
+                                selected = reminderType == NotificationType.DEFAULT,
+                                onClick = { reminderType = NotificationType.DEFAULT } ,
                                 colors = RadioButtonDefaults.colors(selectedColor = streakColor)
 
                             )
                             Text("System Notification")
                         }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = reminderType == "SoundVibration",
-                                onClick = { reminderType = "SoundVibration" } ,
+                                selected = reminderType == NotificationType.ALARM,
+                                onClick = { reminderType = NotificationType.ALARM } ,
                                 colors = RadioButtonDefaults.colors(selectedColor = streakColor)
 
                             )
-                            Text("Alarm Notification", modifier = Modifier.weight(1f))
+                            Text("Alarm Notification")
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = reminderType == "Silent",
-                                onClick = { reminderType = "Silent" } ,
+                                selected = reminderType == NotificationType.SILENT,
+                                onClick = { reminderType = NotificationType.SILENT } ,
                                 colors = RadioButtonDefaults.colors(
                                     selectedColor = streakColor
                                 )
@@ -582,7 +583,8 @@ fun CreateStreakScreen() {
                                 frequency = frequency,
                                 startDate = startDate,
                                 endDate = endDate ,
-                                reminderTime = selectedTime
+                                reminderTime = selectedTime,
+                                notificationType = reminderType
                             )
                         )
                         activity.finish()

@@ -76,11 +76,11 @@ object NotificationHelper {
         return NotificationCompat.Builder(context, channelFor(streak.notificationType))
             .setContentTitle(streak.streakName)
             .setContentText("It’s time to keep your streak alive!")
-            .setSmallIcon(R.drawable.arrow_back_24px) // use your app’s bell/check icon
+            .setSmallIcon(R.drawable.arrow_back_24px)
             .addAction(R.drawable.monitoring_24px, "Mark Done", markDonePending)
             .addAction(R.drawable.ic_launcher_background, "End Streak", endStreakPending)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // ensures it shows on time
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
     }
 }
