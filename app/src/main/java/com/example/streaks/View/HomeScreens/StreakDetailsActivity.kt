@@ -42,6 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -54,6 +57,7 @@ class StreakDetailsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val streakId = intent.getIntExtra("streakId", -1)
+
         if (streakId == -1) {
             finish()
             return
@@ -81,15 +85,33 @@ fun StreakDetailScreen(
     )
 
   val  activity: Activity = LocalContext.current as  Activity
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var streak by remember { mutableStateOf<StreakModel?>(null) }
 
     // Load the streak
     LaunchedEffect(streakId) {
-        viewModel.getStreakById(streakId) {
+        viewModel.getStreakById(streakId)
+        {
             streak = it
         }
     }
+
+    DisposableEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.getStreakById(streakId) {
+                    streak = it
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
 
     val context = LocalContext.current
 

@@ -2,6 +2,7 @@ package com.example.streaks.View.HomeScreens
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.text.format.DateFormat
 import androidx.activity.ComponentActivity
@@ -643,7 +644,7 @@ fun EditStreakScreen(
                     Button(
                         onClick = {
                             viewModel.updateStreak(
-                                StreakModel(
+                                streakModel.copy(
                                     streakName = streakName,
                                     colorValue = streakColor.value.toLong(),
                                     frequency = frequency,
@@ -653,8 +654,8 @@ fun EditStreakScreen(
                                     notificationType = reminderType
                                 )
                             )
-                            activity.finish()
-                        },
+                                activity.finish()
+                                  },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
