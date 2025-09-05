@@ -18,9 +18,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +40,9 @@ import com.example.streaks.Model.StreakModel
 import com.example.streaks.View.HomeScreens.HomeScreenActivity
 import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -47,28 +52,25 @@ import java.util.Locale
 @Composable
 fun NotificationScreen(
     paddingValues: PaddingValues,
-    viewModel: StreakViewModel = hiltViewModel()
+    viewModel: NotificationViewModel = hiltViewModel()
 ) {
-    val streakReminders by viewModel.getReminderStreaks.collectAsState(emptyList())
 
-    if (streakReminders.isEmpty()) {
+    val history by viewModel.notificationHistory.collectAsState()
+
+    if (history.isEmpty()) {
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize()
-                .background(Color.White),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "No Notification yet!",
+                "No Notifications yet!",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.Blue
             )
-
-
-
         }
     } else {
         LazyColumn(
@@ -76,11 +78,11 @@ fun NotificationScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            items(streakReminders) { streak ->
+            items(history) { record ->
                 StreakNotificationItem(
-                    streak = streak,
-                    onDone = { TODO()},
-                    onCancel = { TODO() }
+                    streakName = record.streakName,
+                    time = record.time,
+                    status = record.status
                 )
             }
         }
@@ -89,9 +91,9 @@ fun NotificationScreen(
 
 @Composable
 fun StreakNotificationItem(
-    streak: StreakModel,
-    onDone: () -> Unit,
-    onCancel: () -> Unit
+    streakName: String,
+    time: LocalDateTime,
+    status: String
 ) {
     Surface(
         modifier = Modifier
@@ -109,43 +111,33 @@ fun StreakNotificationItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left side: Streak info
             Column {
                 Text(
-                    text = streak.streakName,
+                    text = streakName,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
-
-                streak.reminderTime?.let { reminder ->
-                    Text(
-                        text = reminder.format(DateTimeFormatter.ofPattern("hh:mm a")),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
+                Text(
+                    text = time.format(DateTimeFormatter.ofPattern("MMM dd, hh:mm a")),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
             }
 
-            // Right side: Actions ✅ ❌
-            Row {
-                IconButton(onClick = onDone) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Mark as Done",
-                        tint = Color(0xFF4CAF50) // green
-                    )
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = when (status) {
+                    "Done" -> Color(0xFF4CAF50)
+                    "Cancelled" -> Color.Red
+                    else -> Color.Gray
                 }
-                IconButton(onClick = onCancel) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel Reminder",
-                        tint = Color.Red
-                    )
-                }
-            }
+            )
         }
     }
 }
+
 
 
 

@@ -6,9 +6,11 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import com.example.streaks.Model.DataBase.StreakDataBase
+import com.example.streaks.Model.NotificationModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -18,18 +20,29 @@ class AlarmReceiver : BroadcastReceiver() {
                 val streakId = intent.getIntExtra("streakId", -1)
                 if (streakId != -1) {
                     val db = StreakDataBase.getDatabase(context)
-                    val streak = db.streakDao().getStreakById(streakId)
+                    val streak = db.streakDao().getStreakById(streakId) ?: return@launch
 
-                    streak?.let {
-                        val notification = NotificationHelper.buildNotification(context, it)
+                    db.notificationDao().insert(
+                        NotificationModel(
+                            streakId = streak.streakId,
+                            streakName = streak.streakName,
+                            message = "Continue Streak?",
+                            time = LocalDateTime.now(),
+                            status = "Pending"
+                        )
+                    )
 
-                        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-                            NotificationManagerCompat.from(context)
-                                .notify(it.streakId, notification)
-                        }
+                    // ✅ Build the system notification
+                    val notification = NotificationHelper.buildNotification(context, streak)
 
-                        NotificationScheduler.scheduleNext(context, it)
+                    // ✅ Show notification only if permissions are enabled
+                    if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                        NotificationManagerCompat.from(context)
+                            .notify(streak.streakId, notification)
                     }
+
+                    // ✅ Reschedule for next time based on frequency
+                    NotificationScheduler.scheduleNext(context, streak)
                 }
             } finally {
                 pendingResult.finish()

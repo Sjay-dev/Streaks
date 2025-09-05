@@ -6,24 +6,30 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.example.streaks.Model.DataBase.StreakDataBase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         val streakId = intent.getIntExtra("streakId", -1)
+        val db = StreakDataBase.getDatabase(context)
 
         if (streakId == -1) return
 
         when (action) {
             ACTION_MARK_DONE -> {
-                // TODO: increment streak progress in DB
-                Toast.makeText(context, "Streak marked as done!", Toast.LENGTH_SHORT).show()
+                CoroutineScope(Dispatchers.IO).launch {
+                    db.notificationDao().updateStatus(streakId, "Done")
+                }
                 cancelNotification(context, streakId)
             }
-
             ACTION_END_STREAK -> {
-                // TODO: update DB to end/cancel this streak
-                Toast.makeText(context, "Streak ended!", Toast.LENGTH_SHORT).show()
+                CoroutineScope(Dispatchers.IO).launch {
+                    db.notificationDao().updateStatus(streakId, "Ended")
+                }
                 cancelNotification(context, streakId)
             }
         }
