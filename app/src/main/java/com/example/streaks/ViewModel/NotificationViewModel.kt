@@ -17,9 +17,9 @@ class NotificationViewModel @Inject constructor(
 ) : ViewModel() {
 
     val notificationHistory: StateFlow<List<NotificationModel>> =
-        repository.allHistory.stateIn(
+        repository.getAllHistory().stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Lazily,
             initialValue = emptyList()
         )
 

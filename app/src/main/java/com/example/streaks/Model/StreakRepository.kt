@@ -27,9 +27,7 @@ class StreakRepository @Inject constructor(
         return dao.getStreakById(id)
     }
 
-    fun getAllWithReminders(): Flow<List<StreakModel>>{
-        return  dao.getAllWithReminders()
-    }
+
 
     suspend fun clearAllReminders() {
         dao.clearAllReminders()

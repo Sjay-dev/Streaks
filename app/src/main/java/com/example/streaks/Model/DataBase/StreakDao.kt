@@ -27,7 +27,7 @@ interface StreakDao {
     suspend fun getStreakById(id: Int): StreakModel?
 
     @Query("SELECT * FROM streaks WHERE reminderTime IS NOT NULL")
-     fun getAllWithReminders(): Flow< List<StreakModel>>
+    fun getAllWithReminders(): Flow< List<StreakModel>>
 
     @Query("UPDATE streaks SET reminderTime = NULL WHERE reminderTime IS NOT NULL")
     suspend fun clearAllReminders()

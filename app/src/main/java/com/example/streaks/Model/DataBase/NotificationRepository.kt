@@ -5,13 +5,12 @@ import kotlinx.coroutines.flow.Flow
 
 class NotificationRepository(private val dao: NotificationDao) {
 
-    val allHistory: Flow<List<NotificationModel>> = dao.getAllHistory()
+    fun getAllHistory(): Flow<List<NotificationModel>> = dao.getAllHistory()
 
     suspend fun insert(notification: NotificationModel) {
         dao.insert(notification)
     }
 
-    // Update status (e.g., Done, Cancelled, Pending)
     suspend fun updateStatus(id: Int, status: String) {
         dao.updateStatus(id, status)
     }

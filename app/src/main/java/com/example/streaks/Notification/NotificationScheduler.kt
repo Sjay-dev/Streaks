@@ -6,18 +6,22 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.example.streaks.Model.Frequency
+import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.StreakModel
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 
 object NotificationScheduler {
+
     private fun pendingIntentFor(context: Context, streakId: Int): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("streakId", streakId)
         }
         return PendingIntent.getBroadcast(
-            context, streakId, intent,
+            context,
+            streakId,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
@@ -29,7 +33,9 @@ object NotificationScheduler {
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, trigger, pendingIntentFor(context, streak.streakId)
+            AlarmManager.RTC_WAKEUP,
+            trigger,
+            pendingIntentFor(context, streak.streakId)
         )
     }
 

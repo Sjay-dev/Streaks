@@ -2,8 +2,8 @@ package com.example.streaks.Model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
-import java.time.LocalDateTime
+
+import java.time.LocalTime
 
 @Entity(tableName = "Notifications")
 data class NotificationModel(
@@ -11,18 +11,8 @@ data class NotificationModel(
     val streakId: Int,
     val streakName: String,
     val message: String,
-    val time: LocalDateTime,
+    val time: LocalTime? = null,
     val status: String
 )
 
-class Converters {
-    @TypeConverter
-    fun fromTimestamp(value: String?): LocalDateTime? {
-        return value?.let { LocalDateTime.parse(it) }
-    }
 
-    @TypeConverter
-    fun dateToTimestamp(date: LocalDateTime?): String? {
-        return date?.toString()
-    }
-}

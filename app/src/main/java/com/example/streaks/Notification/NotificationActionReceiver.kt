@@ -5,32 +5,35 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import com.example.streaks.Model.DataBase.StreakDataBase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class NotificationActionReceiver : BroadcastReceiver() {
+
     override fun onReceive(context: Context, intent: Intent) {
-        val action = intent.action
-        val streakId = intent.getIntExtra("streakId", -1)
-        val db = StreakDataBase.getDatabase(context)
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val action = intent.action
+                val streakId = intent.getIntExtra("streakId", -1)
+                val db = StreakDataBase.getDatabase(context)
 
-        if (streakId == -1) return
-
-        when (action) {
-            ACTION_MARK_DONE -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    db.notificationDao().updateStatus(streakId, "Done")
+                if (streakId != -1) {
+                    when (action) {
+                        ACTION_MARK_DONE -> {
+                            db.notificationDao().updateStatus(streakId, "Done")
+                            cancelNotification(context, streakId)
+                        }
+                        ACTION_END_STREAK -> {
+                            db.notificationDao().updateStatus(streakId, "Ended")
+                            cancelNotification(context, streakId)
+                        }
+                    }
                 }
-                cancelNotification(context, streakId)
-            }
-            ACTION_END_STREAK -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    db.notificationDao().updateStatus(streakId, "Ended")
-                }
-                cancelNotification(context, streakId)
+            } finally {
+                pendingResult.finish()
             }
         }
     }

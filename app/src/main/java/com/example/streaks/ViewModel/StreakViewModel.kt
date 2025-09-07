@@ -95,9 +95,7 @@ class StreakViewModel @Inject constructor
     }
 
 
-    val getReminderStreaks : StateFlow<List<StreakModel>> = repository.getAllWithReminders().stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
-        )
+
 
     fun clearAllReminders() {
         viewModelScope.launch {
