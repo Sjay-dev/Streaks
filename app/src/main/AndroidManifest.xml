@@ -41,8 +41,13 @@
             android:exported="true" />
 
         <receiver
-            android:name=".Notification.AlarmReceiver"
-            android:exported="false" />
+            android:name=".Notification.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
 
     </application>
 
