@@ -83,6 +83,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -110,8 +111,9 @@ fun CreateStreakScreen() {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = true)
 
-    // === ViewModel ===
+    // === ViewModels ===
     val viewModel: StreakViewModel = hiltViewModel()
+    val notiViewModel : NotificationViewModel = hiltViewModel()
 
     // === States ===
     var streakName by remember { mutableStateOf("") }
@@ -605,7 +607,6 @@ fun CreateStreakScreen() {
 
 
                 Spacer(modifier = Modifier.weight(1f))
-                LocalContext.current
 
                 // === CREATE BUTTON ===
                 Button(
@@ -621,6 +622,14 @@ fun CreateStreakScreen() {
                                 notificationType = reminderType
                             )
                         )
+                        val triggerAtMillis = LocalDateTime.of(LocalDate.now(), selectedTime)
+                            .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
+                            .atZone(ZoneId.systemDefault())
+                            .toInstant()
+                            .toEpochMilli()
+
+                        notiViewModel.scheduleAlarm(activity, StreakModel(), triggerAtMillis)
+
                         activity.finish()
                     },
                     enabled = streakName.isNotBlank(),

@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.StreakModel
-import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
