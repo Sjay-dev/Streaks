@@ -1,29 +1,23 @@
 package com.example.streaks.Model.DataBase
 
 import com.example.streaks.Model.NotificationModel
+import com.example.streaks.Model.Status
 import kotlinx.coroutines.flow.Flow
 
 class NotificationRepository(private val dao: NotificationDao) {
 
-    fun getAllHistory(): Flow<List<NotificationModel>> = dao.getAllHistory()
+    fun getAllNotifications(): Flow<List<NotificationModel>> = dao.getAllNotifications()
 
-    suspend fun insert(notification: NotificationModel) {
-        dao.insert(notification)
+    suspend fun addNotification(notification: NotificationModel): Long {
+        return dao.insert(notification)
     }
 
-    suspend fun updateStatus(id: Int, status: String) {
+    suspend fun updateNotificationStatus(id: Int, status: Status) {
         dao.updateStatus(id, status)
     }
 
-    suspend fun delete(notification: NotificationModel) {
-        dao.delete(notification)
-    }
-
-    suspend fun deleteById(id: Int) {
-        dao.deleteById(id)
-    }
-
-    suspend fun clearAll() {
+    suspend fun clearNotifications() {
         dao.clearAll()
     }
 }
+

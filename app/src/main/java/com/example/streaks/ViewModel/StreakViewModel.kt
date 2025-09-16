@@ -180,7 +180,6 @@ class StreakViewModel @Inject constructor
         }
     }
 
-
     fun calculateStreakCount(streak: StreakModel): Int {
         val now = LocalDate.now()
 

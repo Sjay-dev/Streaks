@@ -10,10 +10,18 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.example.streaks.Model.DataBase.NotificationRepository
 import com.example.streaks.Model.Frequency
+import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.NotificationType
+import com.example.streaks.Model.Status
 import com.example.streaks.R
 import com.example.streaks.View.HomeScreens.CHANNEL
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 const val ACTION_DONE = "ACTION_DONE"
 const val ACTION_CANCEL = "ACTION_CANCEL"
@@ -23,9 +31,11 @@ const val EXTRA_FREQUENCY = "EXTRA_FREQUENCY"
 const val EXTRA_NOTIFICATION_TYPE = "EXTRA_NOTIFICATION_TYPE"
 const val STREAK_ID = "STREAK_ID"
 
+@AndroidEntryPoint
 class ReminderRecevier : BroadcastReceiver() {
 
     private var mediaPlayer: MediaPlayer? = null
+    @Inject lateinit var notificationRepository: NotificationRepository
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent?) {
@@ -67,12 +77,13 @@ class ReminderRecevier : BroadcastReceiver() {
                     cancelIntent,
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
+                val message = "It’s time for your ${frequency.name.lowercase()} streak!"
 
                 // Notification builder
                 val builder = NotificationCompat.Builder(context, CHANNEL)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle("Reminder: $streakName")
-                    .setContentText("It’s time for your ${frequency.name.lowercase()} streak!")
+                    .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setOngoing(true)
                     .addAction(R.drawable.ic_launcher_foreground, "Done", donePending)
@@ -111,6 +122,17 @@ class ReminderRecevier : BroadcastReceiver() {
 
                 val notification = builder.build()
                 NotificationManagerCompat.from(context).notify(streakId, notification)
+                CoroutineScope(Dispatchers.IO).launch {
+                    notificationRepository.addNotification(
+                        NotificationModel(
+                            streakId = streakId,
+                            streakName = streakName,
+                            message = message,
+                            status = Status.OnGoing
+                        )
+                    )
+                }
+
             }
         }
     }

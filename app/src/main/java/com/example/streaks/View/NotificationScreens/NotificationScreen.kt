@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -20,21 +21,53 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.NotificationModel
+import com.example.streaks.Model.Status
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
+import java.time.Instant
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 
 @Composable
 fun NotificationScreen(
     paddingValues: PaddingValues,
+    viewModel: NotificationViewModel = hiltViewModel()
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize()
-    ) {
+    val notifications by viewModel.notifications.collectAsState()
+
+    if (notifications.isEmpty()) {
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(Color.White),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "No Notification yet!",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Blue
+            )
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            items(notifications) { notification ->
+                StreakNotificationItem(
+                    notification = notification,
+                    onDone = { viewModel.updateStatus(notification.id, Status.OnGoing) },
+                    onCancel = { viewModel.updateStatus(notification.id, Status.Cancelled) }
+                )
+            }
+        }
     }
 }
 
@@ -43,8 +76,8 @@ fun NotificationScreen(
 
 @Composable
 fun StreakNotificationItem(
-notification: NotificationModel,
-onDone: () -> Unit,
+    notification: NotificationModel,
+    onDone: () -> Unit,
     onCancel: () -> Unit
 ) {
     Surface(
@@ -71,13 +104,20 @@ onDone: () -> Unit,
                     fontWeight = FontWeight.SemiBold
                 )
 
-                notification.time?.let { reminder ->
-                    Text(
-                        text = reminder.format(DateTimeFormatter.ofPattern("hh:mm a")),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
+                // ✅ Format timestamp into readable time
+                val formattedTime = remember(notification.timestamp) {
+                    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+                    Instant.ofEpochMilli(notification.timestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalTime()
+                        .format(formatter)
                 }
+
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
             }
 
             // Right side: Actions ✅ ❌
@@ -100,6 +140,7 @@ onDone: () -> Unit,
         }
     }
 }
+
 
 
 
