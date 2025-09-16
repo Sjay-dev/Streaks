@@ -7,8 +7,9 @@ import javax.inject.Inject
 class StreakRepository @Inject constructor(
     private val dao: StreakDao
 ) {
-    suspend fun insertStreak(streak: StreakModel) {
-        dao.addStreak(streak)
+    suspend fun insertStreak(streak: StreakModel) : Int {
+
+     return   dao.addStreak(streak).toInt()
     }
 
     suspend fun updateStreak(streak: StreakModel) {

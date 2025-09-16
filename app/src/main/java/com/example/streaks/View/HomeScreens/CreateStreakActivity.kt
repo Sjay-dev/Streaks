@@ -2,9 +2,16 @@ package com.example.streaks.View.HomeScreens
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.format.DateFormat
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -70,13 +77,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.Notification.EXTRA_FREQUENCY
+import com.example.streaks.Notification.EXTRA_NOTIFICATION_TYPE
+import com.example.streaks.Notification.EXTRA_STREAK_NAME
+import com.example.streaks.Notification.ReminderRecevier
+import com.example.streaks.Notification.STREAK_ID
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -113,7 +124,6 @@ fun CreateStreakScreen() {
 
     // === ViewModels ===
     val viewModel: StreakViewModel = hiltViewModel()
-    val notiViewModel : NotificationViewModel = hiltViewModel()
 
     // === States ===
     var streakName by remember { mutableStateOf("") }
@@ -622,17 +632,9 @@ fun CreateStreakScreen() {
                                 notificationType = reminderType
                             )
                         )
-                        val triggerAtMillis = LocalDateTime.of(LocalDate.now(), selectedTime)
-                            .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
-                            .atZone(ZoneId.systemDefault())
-                            .toInstant()
-                            .toEpochMilli()
-
-                        notiViewModel.scheduleAlarm(activity, StreakModel(), triggerAtMillis)
-
                         activity.finish()
                     },
-                    enabled = streakName.isNotBlank(),
+                            enabled = streakName.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -647,6 +649,7 @@ fun CreateStreakScreen() {
         }
     }
 }
+
 
 
 

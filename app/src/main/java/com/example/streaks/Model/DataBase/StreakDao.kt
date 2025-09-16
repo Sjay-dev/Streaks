@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface StreakDao {
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
-    suspend fun addStreak(streak: StreakModel)
+    suspend fun addStreak(streak: StreakModel) : Long
 
     @Update
     suspend fun updateStreak(streak: StreakModel)

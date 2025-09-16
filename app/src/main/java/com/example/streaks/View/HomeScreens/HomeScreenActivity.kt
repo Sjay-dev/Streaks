@@ -9,6 +9,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -104,23 +106,35 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 
+const val CHANNEL = "CHANNEL"
+
 @AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION) // system default notification sound
+            val attributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val requestPermissionLauncher =
-                registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-                    // You could show a message if not granted
-                }
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            val channel = NotificationChannel(
+                CHANNEL,
+                "Reminders",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Streak reminders"
+                enableLights(true)
+                enableVibration(true)
+                setSound(soundUri, attributes) // ✅ system default notification sound
+            }
+
+            val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
-
-        // Create notification channel
-
         setContent {
 
                 scaffoldScreen()

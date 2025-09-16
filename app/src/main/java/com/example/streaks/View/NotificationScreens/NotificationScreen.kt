@@ -29,42 +29,15 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun NotificationScreen(
     paddingValues: PaddingValues,
-    viewModel: NotificationViewModel = hiltViewModel()
 ) {
-    val notifications by viewModel.notificationHistory.collectAsState()
-
-    if (notifications.isEmpty()) {
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(Color.White),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "No Notification yet!",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Blue
-            )
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            items(notifications) { notification ->
-                StreakNotificationItem(
-                    notification = notification,
-                    onDone = {  },
-                    onCancel = {  }
-                )
-            }
-        }
+    LazyColumn(
+        modifier = Modifier
+            .padding(paddingValues)
+            .fillMaxSize()
+    ) {
     }
 }
+
 
 
 

@@ -1,10 +1,17 @@
 package com.example.streaks.ViewModel
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
+import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.text.format.DateFormat
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
@@ -44,6 +52,11 @@ import androidx.work.workDataOf
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.StreakRepository
+import com.example.streaks.Notification.EXTRA_FREQUENCY
+import com.example.streaks.Notification.EXTRA_NOTIFICATION_TYPE
+import com.example.streaks.Notification.EXTRA_STREAK_NAME
+import com.example.streaks.Notification.ReminderRecevier
+import com.example.streaks.Notification.STREAK_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -54,6 +67,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
@@ -63,7 +77,7 @@ import kotlin.jvm.java
 
 @HiltViewModel
 class StreakViewModel @Inject constructor
-    (private val repository: StreakRepository) : ViewModel() {
+    (private val repository: StreakRepository , application: Application) : AndroidViewModel(application) {
 
     val streaks: StateFlow<List<StreakModel>> =
         repository.getAllStreaks().stateIn(
@@ -72,10 +86,25 @@ class StreakViewModel @Inject constructor
 
     fun addStreak(streak: StreakModel) {
         viewModelScope.launch {
-            repository.insertStreak(streak)
+
+            val id = repository.insertStreak(streak)
+
+            val savedStreak = streak.copy(streakId = id)
+
+            savedStreak.reminderTime?.let { reminderTime ->
+                val triggerAtMillis = LocalDateTime.of(LocalDate.now(), reminderTime)
+                    .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+
+                scheduleAlarm(getApplication(), savedStreak, triggerAtMillis)
+            }
+
+
+
         }
     }
-
     fun updateStreak(streak: StreakModel) {
         viewModelScope.launch {
             repository.updateStreak(streak)
@@ -93,7 +122,6 @@ class StreakViewModel @Inject constructor
             callback(repository.getStreakById(id))
         }
     }
-
 
 
 
@@ -360,6 +388,44 @@ class StreakViewModel @Inject constructor
         }
     }
 
+    // ========================= REMINDER SCHEDULE LOGIC =========================
 
+    fun scheduleAlarm(context: Context, streak: StreakModel, triggerAtMillis: Long) {
 
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val intent = Intent(context, ReminderRecevier::class.java).apply {
+            putExtra(EXTRA_STREAK_NAME, streak.streakName)
+            putExtra(EXTRA_FREQUENCY, streak.frequency.name)
+            putExtra(EXTRA_NOTIFICATION_TYPE, streak.notificationType.name)
+            putExtra(STREAK_ID, streak.streakId)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            streak.streakId,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                } else {
+                    val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(settingsIntent)
+                    Toast.makeText(context, "Please allow exact alarms in settings.", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+            }
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            Toast.makeText(context, "Failed to schedule alarm: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
 }
