@@ -2,6 +2,7 @@ package com.example.streaks.Model.DataBase
 
 import android.content.Context
 import androidx.room.Room
+import com.example.streaks.Model.NotificationRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

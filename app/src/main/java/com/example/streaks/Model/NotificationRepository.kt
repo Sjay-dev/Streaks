@@ -1,7 +1,6 @@
-package com.example.streaks.Model.DataBase
+package com.example.streaks.Model
 
-import com.example.streaks.Model.NotificationModel
-import com.example.streaks.Model.Status
+import com.example.streaks.Model.DataBase.NotificationDao
 import kotlinx.coroutines.flow.Flow
 
 class NotificationRepository(private val dao: NotificationDao) {
@@ -19,5 +18,8 @@ class NotificationRepository(private val dao: NotificationDao) {
     suspend fun clearNotifications() {
         dao.clearAll()
     }
-}
 
+    suspend fun deleteNotification(id: Int) {
+        dao.deleteNotification(id)
+    }
+}

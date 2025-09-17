@@ -18,7 +18,7 @@ data class StreakModel(
 
     val streakName: String = "",
 
-    val colorValue: Long = Color.Blue.value.toLong(),
+    val streakColor: Long = Color.Blue.value.toLong(),
 
     val frequency: Frequency = Frequency.DAILY,
 

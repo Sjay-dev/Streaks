@@ -173,7 +173,7 @@ fun StreakDetailScreen(
                         modifier = Modifier
                             .size(50.dp)
                             .clip(CircleShape)
-                            .background(Color(s.colorValue.toULong()))
+                            .background(Color(s.streakColor.toULong()))
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
@@ -242,7 +242,7 @@ fun StreakDetailScreen(
                         context.startActivity(intent)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(s.colorValue.toULong()))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(s.streakColor.toULong()))
                 ) {
                     Text("Edit Streak", color = Color.White)
                 }

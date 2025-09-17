@@ -20,4 +20,7 @@ interface NotificationDao {
 
     @Query("UPDATE Notifications SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Int, status: Status)
+
+    @Query("DELETE FROM Notifications WHERE id = :id")
+    suspend fun deleteNotification(id: Int)
 }

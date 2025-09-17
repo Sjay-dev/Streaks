@@ -83,11 +83,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
-import com.example.streaks.Notification.EXTRA_FREQUENCY
-import com.example.streaks.Notification.EXTRA_NOTIFICATION_TYPE
-import com.example.streaks.Notification.EXTRA_STREAK_NAME
-import com.example.streaks.Notification.ReminderRecevier
-import com.example.streaks.Notification.STREAK_ID
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -624,7 +619,7 @@ fun CreateStreakScreen() {
                         viewModel.addStreak(
                             StreakModel(
                                 streakName = streakName,
-                                colorValue = streakColor.value.toLong(),
+                                streakColor = streakColor.value.toLong(),
                                 frequency = frequency,
                                 startDate = startDate,
                                 endDate = endDate,

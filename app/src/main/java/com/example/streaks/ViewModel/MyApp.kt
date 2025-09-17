@@ -1,4 +1,4 @@
-package com.example.streaks.Model
+package com.example.streaks.ViewModel
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

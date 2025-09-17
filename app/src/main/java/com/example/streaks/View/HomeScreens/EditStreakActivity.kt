@@ -104,7 +104,7 @@ fun EditStreakScreen(
     streak?.let { streakModel ->
 
         var streakName by remember { mutableStateOf(streakModel.streakName) }
-        var streakColor by remember { mutableStateOf(Color(streakModel.colorValue.toULong())) }
+        var streakColor by remember { mutableStateOf(Color(streakModel.streakColor.toULong())) }
         var frequency by remember { mutableStateOf(streakModel.frequency) }
 
         //=== Start Date values ===
@@ -646,7 +646,7 @@ fun EditStreakScreen(
                             viewModel.updateStreak(
                                 streakModel.copy(
                                     streakName = streakName,
-                                    colorValue = streakColor.value.toLong(),
+                                    streakColor = streakColor.value.toLong(),
                                     frequency = frequency,
                                     startDate = startDate,
                                     endDate = endDate,

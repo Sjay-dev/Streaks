@@ -2,7 +2,7 @@ package com.example.streaks.ViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.streaks.Model.DataBase.NotificationRepository
+import com.example.streaks.Model.NotificationRepository
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.Status
@@ -13,39 +13,47 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@HiltViewModel
-class NotificationViewModel @Inject constructor(
-    private val repository: NotificationRepository
-) : ViewModel() {
+    @HiltViewModel
+    class NotificationViewModel @Inject constructor(
+        private val repository: NotificationRepository
+    ) : ViewModel() {
 
-    val notifications: StateFlow<List<NotificationModel>> =
-        repository.getAllNotifications()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        val notifications: StateFlow<List<NotificationModel>> =
+            repository.getAllNotifications()
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun addNotification(streakId: Int, streakName: String, message: String, status: Status , frequency: Frequency) {
-        viewModelScope.launch {
-            repository.addNotification(
-                NotificationModel(
-                    streakId = streakId,
-                    streakName = streakName,
-                    message = message,
-                    status = status,
-                    frequency = frequency
+        fun addNotification(streakId: Int, streakName: String, message: String, status: Status , frequency: Frequency) {
+            viewModelScope.launch {
+                repository.addNotification(
+                    NotificationModel(
+                        streakId = streakId,
+                        streakName = streakName,
+                        message = message,
+                        status = status,
+                        frequency = frequency
+                    )
                 )
-            )
+            }
         }
-    }
 
-    fun updateStatus(notificationId: Int, status: Status) {
-        viewModelScope.launch {
-            repository.updateNotificationStatus(notificationId, status)
+        fun updateStatus(notificationId: Int, status: Status) {
+            viewModelScope.launch {
+                repository.updateNotificationStatus(notificationId, status)
+            }
         }
-    }
 
-    fun clearAll() {
-        viewModelScope.launch {
-            repository.clearNotifications()
+        fun clearAll() {
+            viewModelScope.launch {
+                repository.clearNotifications()
+            }
         }
-    }
+
+        fun deleteNotification(notificationId: Int) {
+            viewModelScope.launch {
+                repository.deleteNotification(notificationId)
+            }
+        }
+
+
 
 }

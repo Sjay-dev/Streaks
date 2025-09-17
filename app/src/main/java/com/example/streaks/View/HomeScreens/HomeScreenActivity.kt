@@ -2,12 +2,9 @@
 
 package com.example.streaks.View.HomeScreens
 
-import android.Manifest
-import android.annotation.SuppressLint
+
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
@@ -16,13 +13,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -85,19 +80,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
-import com.example.streaks.R
 import com.example.streaks.View.NotificationScreens.NotificationScreen
-
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -280,7 +266,6 @@ fun scaffoldScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(15.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -427,7 +412,7 @@ fun Streaks(
     inSelectionMode: Boolean
 ) {
     val context = LocalContext.current
-    val streakColor = Color(streak.colorValue.toULong())
+    val streakColor = Color(streak.streakColor.toULong())
 
     // Gradient for border
     val gradientBrush = Brush.linearGradient(

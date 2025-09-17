@@ -10,7 +10,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.streaks.Model.DataBase.NotificationRepository
+import com.example.streaks.Model.NotificationRepository
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.NotificationType
@@ -30,6 +30,7 @@ const val EXTRA_STREAK_NAME = "EXTRA_STREAK_NAME"
 const val EXTRA_FREQUENCY = "EXTRA_FREQUENCY"
 const val EXTRA_NOTIFICATION_TYPE = "EXTRA_NOTIFICATION_TYPE"
 const val STREAK_ID = "STREAK_ID"
+const val STREAK_COLOR = "STREAK_COLOR"
 
 @AndroidEntryPoint
 class ReminderRecevier : BroadcastReceiver() {
@@ -45,6 +46,8 @@ class ReminderRecevier : BroadcastReceiver() {
         val streakName = intent?.getStringExtra(EXTRA_STREAK_NAME) ?: "Streak"
 
         val frequency = intent?.getStringExtra(EXTRA_FREQUENCY)?.let { Frequency.valueOf(it) } ?: Frequency.DAILY
+
+        val streakColor = intent?.getLongExtra(STREAK_COLOR, 0L)
 
         val notificationType = intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE)?.let { NotificationType.valueOf(it) } ?: NotificationType.DEFAULT
 
@@ -128,6 +131,7 @@ class ReminderRecevier : BroadcastReceiver() {
                         NotificationModel(
                             streakId = streakId,
                             streakName = streakName,
+                            streakColor = streakColor!! ,
                             message = message,
                             status = Status.OnGoing,
                             frequency = frequency

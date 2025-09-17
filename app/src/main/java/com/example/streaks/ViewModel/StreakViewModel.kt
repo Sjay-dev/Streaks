@@ -1,6 +1,5 @@
 package com.example.streaks.ViewModel
 
-import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.Application
 import android.app.PendingIntent
@@ -10,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.text.format.DateFormat
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -44,11 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.StreakRepository
@@ -56,6 +50,7 @@ import com.example.streaks.Notification.EXTRA_FREQUENCY
 import com.example.streaks.Notification.EXTRA_NOTIFICATION_TYPE
 import com.example.streaks.Notification.EXTRA_STREAK_NAME
 import com.example.streaks.Notification.ReminderRecevier
+import com.example.streaks.Notification.STREAK_COLOR
 import com.example.streaks.Notification.STREAK_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,8 +74,7 @@ import kotlin.jvm.java
 class StreakViewModel @Inject constructor
     (private val repository: StreakRepository , application: Application) : AndroidViewModel(application) {
 
-    val streaks: StateFlow<List<StreakModel>> =
-        repository.getAllStreaks().stateIn(
+    val streaks: StateFlow<List<StreakModel>> = repository.getAllStreaks().stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
         )
 
@@ -91,20 +85,29 @@ class StreakViewModel @Inject constructor
 
             val savedStreak = streak.copy(streakId = id)
 
-            savedStreak.reminderTime?.let { reminderTime ->
-                val triggerAtMillis = LocalDateTime.of(LocalDate.now(), reminderTime)
-                    .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
+            if (savedStreak.reminderTime == null){
 
-                scheduleAlarm(getApplication(), savedStreak, triggerAtMillis)
+            }
+
+            else{
+                savedStreak.reminderTime?.let { reminderTime ->
+                    val triggerAtMillis = LocalDateTime.of(LocalDate.now(), reminderTime)
+                        .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+
+
+                    scheduleAlarm(getApplication(), savedStreak, triggerAtMillis)
+                }
+
             }
 
 
 
         }
     }
+
     fun updateStreak(streak: StreakModel) {
         viewModelScope.launch {
             repository.updateStreak(streak)
@@ -123,19 +126,6 @@ class StreakViewModel @Inject constructor
         }
     }
 
-
-
-    fun clearAllReminders() {
-        viewModelScope.launch {
-            repository.clearAllReminders()
-        }
-    }
-
-    fun removeReminder(streak: StreakModel) {
-        viewModelScope.launch {
-            repository.removeReminder(streak)
-        }
-    }
 
 
     // === Calculations ===
@@ -398,6 +388,7 @@ class StreakViewModel @Inject constructor
             putExtra(EXTRA_FREQUENCY, streak.frequency.name)
             putExtra(EXTRA_NOTIFICATION_TYPE, streak.notificationType.name)
             putExtra(STREAK_ID, streak.streakId)
+            putExtra(STREAK_COLOR , streak.streakColor)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
