@@ -39,7 +39,14 @@ class ReminderRecevier : BroadcastReceiver() {
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent?) {
-        val streakId = intent?.getIntExtra(STREAK_ID, 0) ?: 0
+
+        val streakId = intent?.getIntExtra(STREAK_ID, 0) ?:0
+
+        val streakName = intent?.getStringExtra(EXTRA_STREAK_NAME) ?: "Streak"
+
+        val frequency = intent?.getStringExtra(EXTRA_FREQUENCY)?.let { Frequency.valueOf(it) } ?: Frequency.DAILY
+
+        val notificationType = intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE)?.let { NotificationType.valueOf(it) } ?: NotificationType.DEFAULT
 
         when (intent?.action) {
             ACTION_DONE, ACTION_CANCEL -> {
@@ -47,13 +54,6 @@ class ReminderRecevier : BroadcastReceiver() {
                 NotificationManagerCompat.from(context).cancel(streakId)
             }
             else -> {
-                val streakName = intent?.getStringExtra(EXTRA_STREAK_NAME) ?: "Streak"
-
-                val frequency = intent?.getStringExtra(EXTRA_FREQUENCY)?.let { Frequency.valueOf(it) } ?: Frequency.DAILY
-
-                val notificationType = intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE)?.let { NotificationType.valueOf(it) } ?: NotificationType.DEFAULT
-
-
                 stopAlarm()
 
                 val doneIntent = Intent(context, ReminderRecevier::class.java).apply {
@@ -77,6 +77,7 @@ class ReminderRecevier : BroadcastReceiver() {
                     cancelIntent,
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
+
                 val message = "It’s time for your ${frequency.name.lowercase()} streak!"
 
                 // Notification builder
@@ -128,7 +129,8 @@ class ReminderRecevier : BroadcastReceiver() {
                             streakId = streakId,
                             streakName = streakName,
                             message = message,
-                            status = Status.OnGoing
+                            status = Status.OnGoing,
+                            frequency = frequency
                         )
                     )
                 }

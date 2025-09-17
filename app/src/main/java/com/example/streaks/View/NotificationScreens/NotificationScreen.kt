@@ -84,27 +84,52 @@ fun StreakNotificationItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp, horizontal = 12.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
+        shadowElevation = 1.dp,
         color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left side: Streak info
-            Column {
-                Text(
-                    text = notification.streakName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+            // Left side: streak info
+            Column(
+                verticalArrangement = Arrangement.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = notification.streakName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                // ✅ Format timestamp into readable time
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Slim status badge
+                    val statusColor = when (notification.status) {
+                        Status.OnGoing -> Color(0xFF4CAF50)
+                        Status.Cancelled -> Color.Red
+                    }
+                    Text(
+                        text = notification.status.name,
+                        color = statusColor,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .background(
+                                statusColor.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Frequency + Time in one line
                 val formattedTime = remember(notification.timestamp) {
                     val formatter = DateTimeFormatter.ofPattern("hh:mm a")
                     Instant.ofEpochMilli(notification.timestamp)
@@ -112,21 +137,20 @@ fun StreakNotificationItem(
                         .toLocalTime()
                         .format(formatter)
                 }
-
                 Text(
-                    text = formattedTime,
+                    text = "Freq: ${notification.frequency.name.lowercase().replaceFirstChar { it.uppercase() }} • $formattedTime",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
             }
 
-            // Right side: Actions ✅ ❌
+            // Right side: actions
             Row {
                 IconButton(onClick = onDone) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Mark as Done",
-                        tint = Color(0xFF4CAF50) // green
+                        tint = Color(0xFF4CAF50)
                     )
                 }
                 IconButton(onClick = onCancel) {
@@ -140,6 +164,8 @@ fun StreakNotificationItem(
         }
     }
 }
+
+
 
 
 

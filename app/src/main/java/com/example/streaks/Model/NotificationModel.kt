@@ -13,7 +13,8 @@ data class NotificationModel(
     val streakName: String,
     val message: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val status: Status
+    val status: Status,
+    val frequency: Frequency
 )
 
 enum class Status{
