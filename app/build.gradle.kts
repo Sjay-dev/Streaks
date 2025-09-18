@@ -60,7 +60,6 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.animation.core.android)
     implementation(libs.androidx.animation.core.android)
-    implementation(libs.testng)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -82,5 +81,4 @@ dependencies {
 
     // Hilt for Jetpack Compose ViewModel
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Latest as of July 2025
-    implementation(kotlin("test"))
 }

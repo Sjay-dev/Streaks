@@ -2,6 +2,7 @@ package com.example.streaks.Model
 
 import com.example.streaks.Model.DataBase.StreakDao
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import javax.inject.Inject
 
 class StreakRepository @Inject constructor(
@@ -28,15 +29,12 @@ class StreakRepository @Inject constructor(
         return dao.getStreakById(id)
     }
 
-
-
-    suspend fun clearAllReminders() {
-        dao.clearAllReminders()
+    suspend fun endStreak(streakId: Int) {
+        val streak = dao.getStreakById(streakId) ?: return
+        val endedStreak = streak.copy(endDate = LocalDate.now().minusDays(1))
+        dao.updateStreak(endedStreak)
     }
 
-    suspend fun removeReminder(streak: StreakModel) {
-        dao.updateStreak(streak.copy(reminderTime = null))
-    }
 
 }
 

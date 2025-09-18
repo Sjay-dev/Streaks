@@ -24,7 +24,7 @@ data class StreakModel(
 
     val startDate: LocalDate = LocalDate.now(),
 
-    val endDate: LocalDate? = LocalDate.now().plusDays(30),
+    val endDate: LocalDate? = null,
 
     val count: Int = 0 ,
 
@@ -52,16 +52,16 @@ class Converters {
     @TypeConverter
     fun toColor(value: Long): Color = Color(value.toULong())
 
-    // Optional: LocalDate converters
     @TypeConverter
-    fun fromLocalDate(date: LocalDate): String {
-        return date.toString()
+    fun fromLocalDate(date: LocalDate?): String? {
+        return date?.toString()
     }
 
     @TypeConverter
-    fun toLocalDate(dateString: String): LocalDate {
-        return LocalDate.parse(dateString)
+    fun toLocalDate(dateString: String?): LocalDate? {
+        return dateString?.let { LocalDate.parse(it) }
     }
+
 
     @TypeConverter
     fun fromLocalTime(time: LocalTime?): String? = time?.toString()

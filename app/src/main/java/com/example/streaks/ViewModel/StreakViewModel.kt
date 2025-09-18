@@ -126,10 +126,13 @@ class StreakViewModel @Inject constructor
         }
     }
 
-
+    fun endStreak(streakId: Int) {
+        viewModelScope.launch {
+            repository.endStreak(streakId)
+        }
+    }
 
     // === Calculations ===
-
 
     fun nextCount(streak: StreakModel, now: LocalDateTime = LocalDateTime.now()): String {
         val start = streak.startDate.atStartOfDay()
@@ -166,21 +169,30 @@ class StreakViewModel @Inject constructor
         }
     }
 
-    fun calculateStreakCount(streak: StreakModel, now: LocalDate = LocalDate.now()): Int {
+    fun calculateStreakCount(
+        streak: StreakModel,
+        now: LocalDate = LocalDate.now()
+    ): Int {
         if (now.isBefore(streak.startDate)) return 0
 
         val end = streak.endDate
-        return if (end != null && now.isAfter(end)) {
-            when (streak.frequency) {
-                Frequency.DAILY -> ChronoUnit.DAYS.between(streak.startDate, end).toInt()
-                Frequency.WEEKLY -> ChronoUnit.WEEKS.between(streak.startDate, end).toInt()
-                Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, end).toInt()
+        return when {
+            //  If endDate exists and streak has already ended → cap at endDate
+            end != null && now.isAfter(end) -> {
+                when (streak.frequency) {
+                    Frequency.DAILY -> ChronoUnit.DAYS.between(streak.startDate, end).toInt()
+                    Frequency.WEEKLY -> ChronoUnit.WEEKS.between(streak.startDate, end).toInt()
+                    Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, end).toInt()
+                }
             }
-        } else {
-            when (streak.frequency) {
-                Frequency.DAILY -> ChronoUnit.DAYS.between(streak.startDate, now).toInt()
-                Frequency.WEEKLY -> ChronoUnit.WEEKS.between(streak.startDate, now).toInt()
-                Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, now).toInt()
+
+            // ✅ If endDate is null → keep counting up to "now"
+            else -> {
+                when (streak.frequency) {
+                    Frequency.DAILY -> ChronoUnit.DAYS.between(streak.startDate, now).toInt()
+                    Frequency.WEEKLY -> ChronoUnit.WEEKS.between(streak.startDate, now).toInt()
+                    Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, now).toInt()
+                }
             }
         }
     }

@@ -26,9 +26,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.streaks.Model.NotificationModel
 import com.example.streaks.Model.Status
 import com.example.streaks.ViewModel.NotificationViewModel
+import com.example.streaks.ViewModel.StreakViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -39,7 +41,6 @@ fun NotificationScreen(
     paddingValues: PaddingValues,
     viewModel: NotificationViewModel = hiltViewModel()
 ) {
-
 
     val notifications by viewModel.notifications.collectAsState()
 
@@ -67,11 +68,7 @@ fun NotificationScreen(
                 .background(Color.White)
         ) {
             items(notifications) { notification ->
-                StreakNotificationItem(
-                    notification = notification,
-                    onDone = { viewModel.updateStatus(notification.id, Status.OnGoing) },
-                    onCancel = { viewModel.updateStatus(notification.id, Status.Cancelled) }
-                )
+                StreakNotificationItem(notification = notification, viewModel = viewModel,)
             }
         }
     }
@@ -82,11 +79,10 @@ fun NotificationScreen(
 
 @Composable
 fun StreakNotificationItem(
-    notification: NotificationModel,
-    onDone: () -> Unit,
-    onCancel: () -> Unit
-) {
+    notification: NotificationModel , viewModel: NotificationViewModel) {
+
     val streakColor = Color(notification.streakColor.toULong())
+    val streakViewModel : StreakViewModel = hiltViewModel()
 
     // Gradient border
     val gradientBrush = Brush.linearGradient(
@@ -180,14 +176,20 @@ fun StreakNotificationItem(
 
             // Right side: actions
             Row {
-                IconButton(onClick = onDone) {
+                IconButton(onClick ={
+                    viewModel.updateStatus(notification.id, Status.OnGoing)
+                    viewModel.deleteNotification(notification.id)
+                }) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Mark as Done",
                         tint = Color(0xFF4CAF50)
                     )
                 }
-                IconButton(onClick = onCancel) {
+                IconButton(onClick = {
+                    viewModel.updateStatus(notification.id, Status.Cancelled)
+                    streakViewModel.endStreak(notification.streakId)
+                }) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Cancel Reminder",
