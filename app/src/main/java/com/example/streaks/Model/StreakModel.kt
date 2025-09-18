@@ -24,7 +24,7 @@ data class StreakModel(
 
     val startDate: LocalDate = LocalDate.now(),
 
-    val endDate: LocalDate = LocalDate.now().plusDays(30),
+    val endDate: LocalDate? = LocalDate.now().plusDays(30),
 
     val count: Int = 0 ,
 
