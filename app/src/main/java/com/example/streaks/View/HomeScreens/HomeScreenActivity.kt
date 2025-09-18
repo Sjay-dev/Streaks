@@ -85,6 +85,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.View.NotificationScreens.NotificationScreen
 import com.example.streaks.View.SettingsScreens.SettingsScreen
+import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
@@ -128,9 +129,6 @@ class HomeScreenActivity : ComponentActivity() {
         }
 
     }
-
-
-
 }
 
 
@@ -148,6 +146,7 @@ fun scaffoldScreen(
     val selectedStreaks by viewModel.selectedStreaks.collectAsState()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEndDialog by remember { mutableStateOf(false) }
 
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(
@@ -159,6 +158,7 @@ fun scaffoldScreen(
     var greetings by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+    val notificationViewModel : NotificationViewModel = hiltViewModel()
     // Real-time greeting update
     LaunchedEffect(Unit) {
         while (true) {
@@ -195,6 +195,28 @@ fun scaffoldScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // End Streak confirm dialog 🔹
+    if (showEndDialog) {
+        AlertDialog(
+            onDismissRequest = { showEndDialog = false },
+            title = { Text("End All Streaks") },
+            text = { Text("Are you sure you want to end all streaks immediately?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    notificationViewModel.clearAll()
+                    showEndDialog = false
+                }) {
+                    Text("End", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndDialog = false }) {
                     Text("Cancel")
                 }
             }
@@ -325,8 +347,12 @@ fun scaffoldScreen(
 
                     1 -> {
                         NotificationFab(
-                            onMarkAllDone = { },
-                            onCancelAll   = { }
+                            onMarkAllDone = {
+                                notificationViewModel.clearAll()
+                            },
+                            onCancelAll   = {
+                                showEndDialog = true
+                            }
                         )
                     }
                 }

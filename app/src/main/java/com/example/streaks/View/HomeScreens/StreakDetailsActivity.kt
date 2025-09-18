@@ -75,24 +75,23 @@ fun StreakDetailScreen(
     streakId: Int,
     viewModel: StreakViewModel = hiltViewModel(),
 ) {
-
     val systemUiController = rememberSystemUiController()
-    var showDeleteDialog by remember {mutableStateOf(false)}
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEndDialog by remember { mutableStateOf(false) }
 
     systemUiController.setSystemBarsColor(
-        Color.Transparent ,
+        Color.Transparent,
         darkIcons = true
     )
 
-  val  activity: Activity = LocalContext.current as  Activity
+    val activity: Activity = LocalContext.current as Activity
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var streak by remember { mutableStateOf<StreakModel?>(null) }
 
     // Load the streak
     LaunchedEffect(streakId) {
-        viewModel.getStreakById(streakId)
-        {
+        viewModel.getStreakById(streakId) {
             streak = it
         }
     }
@@ -112,10 +111,10 @@ fun StreakDetailScreen(
         }
     }
 
-
     val context = LocalContext.current
 
-    if(showDeleteDialog) {
+    // Delete confirm dialog
+    if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Confirm Deletion") },
@@ -130,6 +129,29 @@ fun StreakDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // End Streak confirm dialog 🔹
+    if (showEndDialog) {
+        AlertDialog(
+            onDismissRequest = { showEndDialog = false },
+            title = { Text("End Streak") },
+            text = { Text("Are you sure you want to end this streak immediately?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.endStreak(streakId)
+                    showEndDialog = false
+                    activity.finish()
+                }) {
+                    Text("End", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndDialog = false }) {
                     Text("Cancel")
                 }
             }
@@ -154,7 +176,6 @@ fun StreakDetailScreen(
                 }
             )
         }
-
     ) { padding ->
 
         streak?.let { s ->
@@ -188,7 +209,6 @@ fun StreakDetailScreen(
                     "Frequency: ${s.frequency.name.lowercase().replaceFirstChar { it.uppercase() }}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
-
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -197,7 +217,8 @@ fun StreakDetailScreen(
                 Text(
                     "Start Date: ${s.startDate}",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold                )
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -205,7 +226,8 @@ fun StreakDetailScreen(
                 Text(
                     "End Date: ${s.endDate}",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold                )
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -213,7 +235,8 @@ fun StreakDetailScreen(
                 Text(
                     "Current Count: ${s.count}",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold                )
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -228,9 +251,8 @@ fun StreakDetailScreen(
                 Text(
                     "Reminder Time Selected: ${s.reminderTime}",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -246,6 +268,17 @@ fun StreakDetailScreen(
                 ) {
                     Text("Edit Streak", color = Color.White)
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // End Streak Button
+                Button(
+                    onClick = { showEndDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("End Streak", color = Color.White)
+                }
             }
         } ?: run {
             Box(
@@ -257,4 +290,5 @@ fun StreakDetailScreen(
         }
     }
 }
+
 

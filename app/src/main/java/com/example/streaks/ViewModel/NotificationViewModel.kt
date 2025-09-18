@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
     @HiltViewModel
@@ -54,6 +55,19 @@ import javax.inject.Inject
             }
         }
 
+        fun endAllFromScreen() {
+            viewModelScope.launch {
+                notifications.value.forEach { notif ->
+                    repository.(notif.streakId)
+                }
+
+                // Optionally clear notifications after ending
+                repository.deleteAllNotifications()
+            }
+        }
 
 
-}
+
+
+
+    }

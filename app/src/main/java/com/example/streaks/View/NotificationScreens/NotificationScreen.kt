@@ -189,6 +189,7 @@ fun StreakNotificationItem(
                 IconButton(onClick = {
                     viewModel.updateStatus(notification.id, Status.Cancelled)
                     streakViewModel.endStreak(notification.streakId)
+                    viewModel.deleteNotification(notification.id)
                 }) {
                     Icon(
                         imageVector = Icons.Default.Close,

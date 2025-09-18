@@ -132,6 +132,8 @@ class StreakViewModel @Inject constructor
         }
     }
 
+
+
     // === Calculations ===
 
     fun nextCount(streak: StreakModel, now: LocalDateTime = LocalDateTime.now()): String {
@@ -225,6 +227,8 @@ class StreakViewModel @Inject constructor
             clearSelection()
         }
     }
+
+
 
 
 
