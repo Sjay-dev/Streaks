@@ -127,7 +127,7 @@ fun EditStreakScreen(
         var isEternityText by remember { mutableStateOf("Externity?") }
         var confirmedEndDate by remember {
             mutableStateOf<Long?>(
-                endDate!!.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                endDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
             )
         }
         var tempSelectedEndDate by remember { mutableStateOf<Long?>(null) }
@@ -435,6 +435,7 @@ fun EditStreakScreen(
 
                     // === END DATE PICKER ===
                     if (!isEternity) {
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()

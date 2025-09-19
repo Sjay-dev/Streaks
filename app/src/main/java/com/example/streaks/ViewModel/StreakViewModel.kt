@@ -111,6 +111,18 @@ class StreakViewModel @Inject constructor
     fun updateStreak(streak: StreakModel) {
         viewModelScope.launch {
             repository.updateStreak(streak)
+
+            streak.reminderTime?.let { reminderTime ->
+                val triggerAtMillis = LocalDateTime.of(LocalDate.now(), reminderTime)
+                    .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+
+
+                scheduleAlarm(getApplication(), streak, triggerAtMillis)
+            }
+
         }
     }
 

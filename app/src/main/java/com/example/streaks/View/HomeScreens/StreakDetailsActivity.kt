@@ -236,7 +236,7 @@ fun StreakDetailScreen(
 
                 // Current count
                 Text(
-                    "Current Count: ${s.count}",
+                    "Current Count: ${viewModel.calculateStreakCount(s)}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
