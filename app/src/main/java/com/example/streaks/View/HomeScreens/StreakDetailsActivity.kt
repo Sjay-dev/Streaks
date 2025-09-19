@@ -49,6 +49,7 @@ import com.example.streaks.Model.StreakModel
 import com.example.streaks.ViewModel.StreakViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
+import java.time.LocalDate
 
 @AndroidEntryPoint
 class StreakDetailsActivity : ComponentActivity() {
@@ -135,7 +136,7 @@ fun StreakDetailScreen(
         )
     }
 
-    // End Streak confirm dialog 🔹
+    // End Streak confirm dialog
     if (showEndDialog) {
         AlertDialog(
             onDismissRequest = { showEndDialog = false },
@@ -179,6 +180,8 @@ fun StreakDetailScreen(
     ) { padding ->
 
         streak?.let { s ->
+
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -272,12 +275,17 @@ fun StreakDetailScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // End Streak Button
+                val hasEnded = s.endDate?.let { end ->
+                    !end.isAfter(LocalDate.now())
+                } ?: false
                 Button(
                     onClick = { showEndDialog = true },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    enabled = !hasEnded
                 ) {
-                    Text("End Streak", color = Color.White)
+                    Text(if (hasEnded) "Streak Ended" else "End Streak",
+                        color = Color.White)
                 }
             }
         } ?: run {

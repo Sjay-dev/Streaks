@@ -23,9 +23,6 @@ class NotificationRepository(private val dao: NotificationDao) {
         dao.deleteNotification(id)
     }
 
-    suspend fun getStreakbyId(id: Int){
-        dao.getStreakById(id)
-    }
 
 
 

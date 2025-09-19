@@ -146,7 +146,6 @@ fun scaffoldScreen(
     val selectedStreaks by viewModel.selectedStreaks.collectAsState()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var showEndDialog by remember { mutableStateOf(false) }
 
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(
@@ -201,27 +200,7 @@ fun scaffoldScreen(
         )
     }
 
-    // End Streak confirm dialog 🔹
-    if (showEndDialog) {
-        AlertDialog(
-            onDismissRequest = { showEndDialog = false },
-            title = { Text("End All Streaks") },
-            text = { Text("Are you sure you want to end all streaks immediately?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    notificationViewModel.clearAll()
-                    showEndDialog = false
-                }) {
-                    Text("End", color = Color.Red)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEndDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+
 
     Scaffold(
         topBar = {
@@ -329,7 +308,6 @@ fun scaffoldScreen(
             if (selectedStreaks.isEmpty()) {
                 when (pagerState.currentPage) {
                     0 -> {
-                        // ✅ Home FAB → Add Streak
                         FloatingActionButton(
                             onClick = {
                                 context.startActivity(
@@ -345,15 +323,18 @@ fun scaffoldScreen(
                         }
                     }
 
-                    1 -> {
-                        NotificationFab(
-                            onMarkAllDone = {
+                    1 ->{
+                        FloatingActionButton(
+                            onClick = {
                                 notificationViewModel.clearAll()
                             },
-                            onCancelAll   = {
-                                showEndDialog = true
-                            }
-                        )
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White,
+                            shape = CircleShape,
+                            modifier = Modifier.padding(end = 15.dp)
+                        ) {
+                            Icon(Icons.Default.Check, "Check")
+                        }
                     }
                 }
             }
@@ -561,46 +542,7 @@ fun BottomNavigationBar(
     }
 }
 
-@Composable
-fun NotificationFab(
-    onMarkAllDone: () -> Unit,
-    onCancelAll: () -> Unit,
-) {
-    var isMarkDone by rememberSaveable { mutableStateOf(true) }
-    val haptics = LocalHapticFeedback.current
 
-    Surface(
-        modifier = Modifier
-            .padding(end = 15.dp)
-            .size(56.dp)
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    if (isMarkDone) onMarkAllDone() else onCancelAll()
-                },
-                onLongClick = {
-                    isMarkDone = !isMarkDone
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                }
-            ),
-        shape = CircleShape,
-        tonalElevation = 6.dp,
-        shadowElevation = 6.dp,
-        color = if (isMarkDone) Color(0xFF4CAF50) else Color.Red // green ↔ red
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isMarkDone) Icons.Default.Check else Icons.Default.Close,
-                contentDescription = if (isMarkDone) "Mark Done" else "Cancel",
-                tint = Color.White
-            )
-        }
-    }
-}
 
 
 

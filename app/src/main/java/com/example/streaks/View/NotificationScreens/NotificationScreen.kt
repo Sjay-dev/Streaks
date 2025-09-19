@@ -13,7 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -83,6 +85,7 @@ fun StreakNotificationItem(
 
     val streakColor = Color(notification.streakColor.toULong())
     val streakViewModel : StreakViewModel = hiltViewModel()
+    var showEndDialog by remember { mutableStateOf(false) }
 
     // Gradient border
     val gradientBrush = Brush.linearGradient(
@@ -174,6 +177,29 @@ fun StreakNotificationItem(
                 )
             }
 
+            //Show End Streak Dialog
+            if (showEndDialog) {
+                AlertDialog(
+                    onDismissRequest = { showEndDialog = false },
+                    title = { Text("End Streak") },
+                    text = { Text("Are you sure you want to end this streak immediately?") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.updateStatus(notification.id, Status.Cancelled)
+                            streakViewModel.endStreak(notification.streakId)
+                            viewModel.deleteNotification(notification.id)
+                        }) {
+                            Text("End", color = Color.Red)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showEndDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
             // Right side: actions
             Row {
                 IconButton(onClick ={
@@ -186,11 +212,7 @@ fun StreakNotificationItem(
                         tint = Color(0xFF4CAF50)
                     )
                 }
-                IconButton(onClick = {
-                    viewModel.updateStatus(notification.id, Status.Cancelled)
-                    streakViewModel.endStreak(notification.streakId)
-                    viewModel.deleteNotification(notification.id)
-                }) {
+                IconButton(onClick = { showEndDialog = true }) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Cancel Reminder",

@@ -25,7 +25,4 @@ interface NotificationDao {
     @Query("DELETE FROM Notifications")
     suspend fun clearAll()
 
-    @Query("SELECT * FROM Notifications WHERE streakId = :id")
-    suspend fun getStreakById(id: Int)
-
 }
