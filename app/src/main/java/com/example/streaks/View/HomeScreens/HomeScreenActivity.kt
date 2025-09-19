@@ -157,6 +157,9 @@ fun scaffoldScreen(
     var greetings by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+    val intent : Intent = Intent(context, HomeScreenActivity::class.java)
+    val openPage = intent?.getIntExtra("OPEN_PAGE_INDEX", 0) ?: 0
+
     val notificationViewModel : NotificationViewModel = hiltViewModel()
     // Real-time greeting update
     LaunchedEffect(Unit) {
@@ -170,6 +173,11 @@ fun scaffoldScreen(
             }
             delay(60 * 1000)
         }
+    }
+
+    //Scroll to Notification page
+    LaunchedEffect(Unit) {
+        pagerState.scrollToPage(openPage)
     }
 
     // Delete confirmation dialog

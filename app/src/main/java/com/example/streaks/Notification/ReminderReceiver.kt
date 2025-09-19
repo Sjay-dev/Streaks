@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -17,6 +19,7 @@ import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.Status
 import com.example.streaks.R
 import com.example.streaks.View.HomeScreens.CHANNEL
+import com.example.streaks.View.HomeScreens.HomeScreenActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,11 +34,20 @@ const val EXTRA_FREQUENCY = "EXTRA_FREQUENCY"
 const val EXTRA_NOTIFICATION_TYPE = "EXTRA_NOTIFICATION_TYPE"
 const val STREAK_ID = "STREAK_ID"
 const val STREAK_COLOR = "STREAK_COLOR"
+const val NOTIFICATION_PAGE = "NOTIFICATION_PAGE"
 
 @AndroidEntryPoint
 class ReminderRecevier : BroadcastReceiver() {
 
-    private var mediaPlayer: MediaPlayer? = null
+    companion object {
+        private var mediaPlayer: MediaPlayer? = null
+
+        fun stopAlarm() {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
+    }
     @Inject lateinit var notificationRepository: NotificationRepository
 
     @SuppressLint("MissingPermission")
@@ -52,10 +64,11 @@ class ReminderRecevier : BroadcastReceiver() {
         val notificationType = intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE)?.let { NotificationType.valueOf(it) } ?: NotificationType.DEFAULT
 
         when (intent?.action) {
-            ACTION_DONE, ACTION_CANCEL -> {
+            ACTION_DONE -> {
                 stopAlarm()
                 NotificationManagerCompat.from(context).cancel(streakId)
             }
+
             else -> {
                 stopAlarm()
 
@@ -70,82 +83,77 @@ class ReminderRecevier : BroadcastReceiver() {
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
 
-                val cancelIntent = Intent(context, ReminderRecevier::class.java).apply {
-                    action = ACTION_CANCEL
-                    putExtra(STREAK_ID, streakId)
+                val message = "It’s time for your ${frequency.name.lowercase()} streak!"
+
+                val openIntent = Intent(context, HomeScreenActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra(NOTIFICATION_PAGE, 1)
                 }
-                val cancelPending = PendingIntent.getBroadcast(
+
+                val openPending = PendingIntent.getActivity(
                     context,
-                    streakId * 10 + 2,
-                    cancelIntent,
+                    streakId,
+                    openIntent,
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
 
-                val message = "It’s time for your ${frequency.name.lowercase()} streak!"
-
-                // Notification builder
                 val builder = NotificationCompat.Builder(context, CHANNEL)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle("Reminder: $streakName")
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setOngoing(true)
-                    .addAction(R.drawable.ic_launcher_foreground, "Done", donePending)
-                    .addAction(R.drawable.ic_launcher_foreground, "Cancel", cancelPending)
-                    .setAutoCancel(false)
+                    .setContentIntent(openPending)
+                    .setAutoCancel(true)
+                    .addAction(R.drawable.ic_launcher_foreground, "Done", donePending) // ✅ only Done button
 
                 when (notificationType) {
                     NotificationType.DEFAULT -> {
-                        // ✅ Use system defaults (sound/vibrate/silent depending on ringer mode)
                         builder.setDefaults(NotificationCompat.DEFAULT_ALL)
                     }
-
                     NotificationType.SILENT -> {
-                        // ✅ No sound, no vibration
                         builder.setSound(null)
                         builder.setVibrate(null)
                     }
-
                     NotificationType.ALARM -> {
-                        val soundUri = Uri.parse("android.resource://${context.packageName}/${R.raw.alarm1}")
+                        val soundUri =
+                            Uri.parse("android.resource://${context.packageName}/${R.raw.alarm1}")
 
-                        // ✅ Force alarm-like behavior
                         builder
-                            .setSound(soundUri) // plays sound once
-                            .setCategory(NotificationCompat.CATEGORY_ALARM) // mark as alarm
-                            .setFullScreenIntent(cancelPending, true) // popup over lock screen
+                            .setSound(soundUri)
+                            .setCategory(NotificationCompat.CATEGORY_ALARM)
+                            .setFullScreenIntent(donePending, true) // use donePending here
                             .setVibrate(longArrayOf(0, 500, 1000, 500))
 
-                        // ✅ Loop sound manually
                         mediaPlayer = MediaPlayer.create(context, soundUri).apply {
                             isLooping = true
                             start()
+
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                stopAlarm()
+                            }, 3 * 60 * 1000L)
                         }
                     }
                 }
 
                 val notification = builder.build()
                 NotificationManagerCompat.from(context).notify(streakId, notification)
+
+                // Save as ongoing when shown
                 CoroutineScope(Dispatchers.IO).launch {
                     notificationRepository.addNotification(
                         NotificationModel(
                             streakId = streakId,
                             streakName = streakName,
-                            streakColor = streakColor!! ,
+                            streakColor = streakColor!!,
                             message = message,
                             status = Status.OnGoing,
                             frequency = frequency
                         )
                     )
                 }
-
             }
         }
     }
 
-    private fun stopAlarm() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
-    }
 }

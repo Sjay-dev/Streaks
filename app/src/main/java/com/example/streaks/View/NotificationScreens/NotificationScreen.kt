@@ -70,7 +70,7 @@ fun NotificationScreen(
                 .background(Color.White)
         ) {
             items(notifications) { notification ->
-                StreakNotificationItem(notification = notification, viewModel = viewModel,)
+                StreakNotificationItem(notification = notification, viewModel = viewModel)
             }
         }
     }
