@@ -233,7 +233,9 @@ class StreakViewModel @Inject constructor
         viewModelScope.launch {
             _selectedStreaks.value.forEach { id ->
                 getStreakById(id) { streak ->
-                    streak?.let { deleteStreak(it) }
+                    streak?.let { deleteStreak(it)
+                    cancelAlarm(it.streakId , getApplication())
+                    }
                 }
             }
             clearSelection()
@@ -442,4 +444,19 @@ class StreakViewModel @Inject constructor
             Toast.makeText(context, "Failed to schedule alarm: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
+
+    fun cancelAlarm(streakId: Int , context: Context) {
+        val intent = Intent(context, ReminderRecevier::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            streakId,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel() // cleanup
+    }
+
 }

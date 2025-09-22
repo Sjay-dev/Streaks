@@ -123,6 +123,7 @@ fun StreakDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteStreak(streak!!)
+                    viewModel.cancelAlarm(streakId, context)
                     activity.finish()
                 }) {
                     Text("Delete", color = Color.Red)
@@ -145,6 +146,7 @@ fun StreakDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.endStreak(streakId)
+                    viewModel.cancelAlarm(streakId, context)
                     showEndDialog = false
                     activity.finish()
                 }) {
