@@ -84,6 +84,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.View.NotificationScreens.NotificationScreen
+import com.example.streaks.View.SettingsScreens.MyAppTheme
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
@@ -123,8 +124,12 @@ class HomeScreenActivity : ComponentActivity() {
             notificationManager.createNotificationChannel(channel)
         }
         setContent {
-
+            val viewModel: StreakViewModel = hiltViewModel()
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            MyAppTheme(darkTheme = isDarkMode) {
                 scaffoldScreen()
+
+            }
 
         }
 

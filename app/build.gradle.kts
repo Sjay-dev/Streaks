@@ -82,4 +82,8 @@ dependencies {
 
     // Hilt for Jetpack Compose ViewModel
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Latest as of July 2025
+
+    //DataStore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
 }

@@ -28,8 +28,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
 
-    @Inject
-    lateinit var streakRepository: StreakRepository
+    @Inject lateinit var streakRepository: StreakRepository
     @Inject lateinit var notificationRepository: NotificationRepository
 
 

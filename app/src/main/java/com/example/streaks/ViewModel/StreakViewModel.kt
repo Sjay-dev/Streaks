@@ -52,6 +52,7 @@ import com.example.streaks.Notification.EXTRA_STREAK_NAME
 import com.example.streaks.Notification.ReminderRecevier
 import com.example.streaks.Notification.STREAK_COLOR
 import com.example.streaks.Notification.STREAK_ID
+import com.example.streaks.View.SettingsScreens.SettingsDataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -72,7 +73,9 @@ import kotlin.jvm.java
 
 @HiltViewModel
 class StreakViewModel @Inject constructor
-    (private val repository: StreakRepository , application: Application) : AndroidViewModel(application) {
+    (private val repository: StreakRepository,
+     private val settingsDataStore: SettingsDataStore,
+     application: Application) : AndroidViewModel(application) {
 
     val streaks: StateFlow<List<StreakModel>> = repository.getAllStreaks().stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
@@ -144,7 +147,15 @@ class StreakViewModel @Inject constructor
         }
     }
 
+    val isDarkMode: StateFlow<Boolean> = settingsDataStore.isDarkMode
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
+
+    fun toggleDarkMode(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.setDarkMode(enabled)
+        }
+    }
 
     // === Calculations ===
 

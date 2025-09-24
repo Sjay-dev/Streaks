@@ -3,6 +3,7 @@ package com.example.streaks.Model.DataBase
 import android.content.Context
 import androidx.room.Room
 import com.example.streaks.Model.NotificationRepository
+import com.example.streaks.View.SettingsScreens.SettingsDataStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,6 +43,12 @@ object DatabaseModule {
     ): NotificationRepository {
         return NotificationRepository(dao)
     }
+
+    @Provides
+    @Singleton
+    fun provideSettingsDataStore(
+        @ApplicationContext context: Context
+    ): SettingsDataStore { return SettingsDataStore(context) }
 }
 
 
