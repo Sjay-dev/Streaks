@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,7 @@ import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
+import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
@@ -82,8 +84,22 @@ class CreateStreakActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         setContent {
-            CreateStreakScreen()
+            val viewModel: StreakViewModel = hiltViewModel()
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+
+            val systemUiController = rememberSystemUiController()
+            systemUiController.setSystemBarsColor(
+                Color.Transparent,
+                darkIcons = !isDarkMode
+            )
+
+            StreaksTheme(darkTheme = isDarkMode) {
+                CreateStreakScreen()
+            }
+
         }
     }
 }
@@ -96,8 +112,7 @@ class CreateStreakActivity : ComponentActivity() {
 @Composable
 fun CreateStreakScreen() {
     val activity = LocalContext.current as Activity
-    val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = true)
+
 
     // === ViewModels ===
     val viewModel: StreakViewModel = hiltViewModel()
@@ -150,7 +165,7 @@ fun CreateStreakScreen() {
     //===UI===//
     Scaffold(
         topBar = {
-            Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
+            Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier = Modifier
                         .statusBarsPadding()
@@ -170,7 +185,7 @@ fun CreateStreakScreen() {
         }
     ) { paddingValues ->
         Surface(
-            color = Color.White,
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -327,13 +342,14 @@ fun CreateStreakScreen() {
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFF0F0F0))
                             .clickable { showStartDatePicker = true }
-                            .padding(16.dp)
+                            .padding(12.dp)
                     ) {
                         val displayText = confirmedStartDate?.let {
                             "Tap to Pick another start date"
                         } ?: "Tap to select a start date"
 
-                        Text(displayText)
+                        Text(displayText , fontSize = 15.sp ,color = Color.Black
+                        )
                     }
 
                     Spacer(modifier = Modifier.size(10.dp))
@@ -343,7 +359,7 @@ fun CreateStreakScreen() {
                             state = startDatePickerState,
                             showModeToggle = true,
                             colors = DatePickerDefaults.colors(
-                                containerColor = Color.White,
+                                containerColor = MaterialTheme.colorScheme.background,
                                 currentYearContentColor = streakColor,
                                 selectedDayContainerColor = streakColor,
                                 todayDateBorderColor = streakColor,
@@ -408,13 +424,15 @@ fun CreateStreakScreen() {
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFF0F0F0))
                             .clickable { showEndDatePicker = true }
-                            .padding(16.dp)
+                            .padding(12.dp)
                     ) {
                         val displayText = confirmedEndDate?.let {
                             "Tap to Pick another end date"
                         } ?: "Tap to select a end date"
 
-                        Text(displayText)
+                        Text(displayText , fontSize = 15.sp
+                              ,  color = Color.Black
+                        )
                     }
 
                     Spacer(modifier = Modifier.size(10.dp))
@@ -489,13 +507,15 @@ fun CreateStreakScreen() {
                                 .clickable {
                                     showTimePicker = true
                                 }
-                                .padding(16.dp)
+                                .padding(12.dp)
                         ) {
                             val displayText = selectedTime?.let {
                                 "Tap to Pick another reminder time"
                             } ?: "Tap to select a reminder time"
 
-                            Text(displayText)
+                            Text(displayText , fontSize = 15.sp ,
+                                color = Color.Black
+                                )
                         }
                     }
 

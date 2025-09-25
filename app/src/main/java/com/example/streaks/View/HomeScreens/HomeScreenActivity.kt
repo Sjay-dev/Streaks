@@ -73,10 +73,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
+
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,7 +82,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.View.NotificationScreens.NotificationScreen
-import com.example.streaks.View.SettingsScreens.MyAppTheme
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
@@ -128,10 +125,12 @@ class HomeScreenActivity : ComponentActivity() {
             val viewModel: StreakViewModel = hiltViewModel()
             val isDarkMode by viewModel.isDarkMode.collectAsState()
 
-            StreaksTheme(darkTheme = isDarkMode
-            ,     dynamicColor = false
-
-            ) {
+            val systemUiController = rememberSystemUiController()
+            systemUiController.setSystemBarsColor(
+                Color.Transparent,
+                darkIcons = !isDarkMode
+            )
+            StreaksTheme(darkTheme = isDarkMode) {
                 scaffoldScreen()
 
             }
@@ -160,11 +159,7 @@ fun scaffoldScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(
-        Color.Transparent,
-        darkIcons = true
-    )
+
 
     val userName = "Sj"
     var greetings by remember { mutableStateOf("") }
@@ -245,13 +240,13 @@ fun scaffoldScreen(
                             modifier = Modifier
                                 .statusBarsPadding()
                                 .fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.background,
+                            color = Color.Transparent,
                             tonalElevation = 15.dp
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(10.dp),
+                                    .padding(15.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -268,7 +263,7 @@ fun scaffoldScreen(
                                 }) {
                                     Icon(
                                         imageVector = Icons.Default.Settings,
-                                        contentDescription = "Settings"
+                                        contentDescription = "Settings" ,
                                     )
                                 }
                             }
@@ -281,7 +276,7 @@ fun scaffoldScreen(
                         modifier = Modifier
                             .statusBarsPadding()
                             .fillMaxWidth(),
-                        color = Color.White,
+                        color = Color.Transparent,
                         tonalElevation = 15.dp
                     ) {
                         Row(
@@ -304,7 +299,7 @@ fun scaffoldScreen(
                         modifier = Modifier
                             .statusBarsPadding()
                             .fillMaxWidth(),
-                        color = Color.White,
+                        color = Color.Transparent,
                         tonalElevation = 15.dp
                     ) {
                         Row(
@@ -398,7 +393,7 @@ fun HomeScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.background),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -406,7 +401,7 @@ fun HomeScreen(
                 "No Streak created yet!",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Blue
+                color =MaterialTheme.colorScheme.background
             )
         }
     }
@@ -415,7 +410,7 @@ fun HomeScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             LazyColumn {
@@ -454,7 +449,7 @@ fun Streaks(
     )
 
     Surface(
-        color = if (isSelected) streakColor.copy(alpha = 0.1f) else Color.White,
+        color = if (isSelected) streakColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.background,
         shape = RoundedCornerShape(12.dp),
         shadowElevation = 4.dp,
         border = BorderStroke(
@@ -546,7 +541,7 @@ fun BottomNavigationBar(
         Icons.Default.Settings
     )
 
-    NavigationBar(containerColor = Color.White) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
         items.forEachIndexed { index, label ->
             NavigationBarItem(
                 selected = pagerState.currentPage == index,
@@ -556,7 +551,7 @@ fun BottomNavigationBar(
                 },
                 label = { Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
                 colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = Color.Blue
+                    indicatorColor = MaterialTheme.colorScheme.primary
                 )
             )
         }

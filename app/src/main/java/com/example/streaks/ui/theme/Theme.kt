@@ -16,7 +16,7 @@ private val DarkColorScheme = darkColorScheme(
     primary = Color.Blue,
     secondary = Color(0x1D0A6FC0),
     tertiary = Color.Red,
-    background = Color.Black
+    background = Color(0xFF001826)
 
 )
 
@@ -32,7 +32,7 @@ private val LightColorScheme = lightColorScheme(
 fun StreaksTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
