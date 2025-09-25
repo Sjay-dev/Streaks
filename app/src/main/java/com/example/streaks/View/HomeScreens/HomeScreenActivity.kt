@@ -18,7 +18,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +48,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -88,6 +88,7 @@ import com.example.streaks.View.SettingsScreens.MyAppTheme
 import com.example.streaks.View.SettingsScreens.SettingsScreen
 import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
+import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -126,10 +127,17 @@ class HomeScreenActivity : ComponentActivity() {
         setContent {
             val viewModel: StreakViewModel = hiltViewModel()
             val isDarkMode by viewModel.isDarkMode.collectAsState()
-            MyAppTheme(darkTheme = isDarkMode) {
+
+            StreaksTheme(darkTheme = isDarkMode
+            ,     dynamicColor = false
+
+            ) {
                 scaffoldScreen()
 
             }
+
+
+
 
         }
 
@@ -237,7 +245,7 @@ fun scaffoldScreen(
                             modifier = Modifier
                                 .statusBarsPadding()
                                 .fillMaxWidth(),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.background,
                             tonalElevation = 15.dp
                         ) {
                             Row(
