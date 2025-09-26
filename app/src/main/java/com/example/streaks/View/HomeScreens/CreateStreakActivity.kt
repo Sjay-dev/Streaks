@@ -91,10 +91,7 @@ class CreateStreakActivity : ComponentActivity() {
             val isDarkMode by viewModel.isDarkMode.collectAsState()
 
             val systemUiController = rememberSystemUiController()
-            systemUiController.setSystemBarsColor(
-                Color.Transparent,
-                darkIcons = !isDarkMode
-            )
+            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkMode)
 
             StreaksTheme(darkTheme = isDarkMode) {
                 CreateStreakScreen()

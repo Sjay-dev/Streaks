@@ -33,6 +33,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.ViewModel.StreakViewModel
+import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
@@ -71,8 +73,17 @@ class EditStreakActivity : ComponentActivity() {
         // Get streakId (passed from Home/Details)
         val streakId = intent.getIntExtra("streakId", -1)
 
+
         setContent {
-            EditStreakScreen(streakId = streakId, onBack = { finish() })
+            val viewModel: StreakViewModel = hiltViewModel()
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+
+            val systemUiController = rememberSystemUiController()
+            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkMode)
+
+            StreaksTheme(isDarkMode) {
+                EditStreakScreen(streakId = streakId, onBack = { finish() })
+            }
         }
     }
 }
@@ -85,12 +96,6 @@ fun EditStreakScreen(
     onBack: () -> Unit
 ) {
     val activity = LocalContext.current as Activity
-    val systemUiController = rememberSystemUiController()
-
-    systemUiController.setSystemBarsColor(
-        Color.Transparent,
-        darkIcons = true
-    )
 
     val viewModel: StreakViewModel = hiltViewModel()
     var streak by remember { mutableStateOf<StreakModel?>(null) }
@@ -170,9 +175,11 @@ fun EditStreakScreen(
         val presetColors = listOf(Color.Red, Color.Blue, Color.Black, Color.Green, Color.Magenta)
         val frequencyOptions = Frequency.values()
 
+        val isDarkMode by viewModel.isDarkMode.collectAsState()
+
         Scaffold(
             topBar = {
-                Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
+                Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
                     Box(
                         modifier = Modifier
                             .statusBarsPadding()
@@ -197,7 +204,7 @@ fun EditStreakScreen(
         ) { paddingValues ->
 
             Surface(
-                color = Color.White,
+                color = MaterialTheme.colorScheme.background,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
@@ -238,11 +245,12 @@ fun EditStreakScreen(
                                     .background(presetColor)
                                     .border(
                                         width = if (streakColor == presetColor) 3.dp else 0.dp,
-                                        color = if (streakColor == presetColor) Color.White else streakColor,
+                                        color = if (streakColor == presetColor) MaterialTheme.colorScheme.background else streakColor,
                                         shape = CircleShape
                                     )
-                                    .clickable { streakColor = presetColor }
-                            )
+                                    .clickable { if(!isDarkMode) streakColor = presetColor
+                                    else streakColor = if(presetColor == Color.Black) Color.White else presetColor
+                                    }                            )
                         }
                     }
 
@@ -258,7 +266,7 @@ fun EditStreakScreen(
                                 modifier = Modifier.padding(end = 10.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (frequency == option) streakColor else Color.LightGray,
-                                    contentColor = Color.White
+                                    contentColor = if (frequency == option) if (streakColor == Color.White) Color.Black else Color.White else Color.Black
                                 )
                             ) {
                                 Text(option.name.lowercase().replaceFirstChar { it.uppercase() })
@@ -285,7 +293,9 @@ fun EditStreakScreen(
                                 isToday = it
                                 isTodayText = "Today?"
                             },
-                            colors = SwitchDefaults.colors(checkedTrackColor = streakColor)
+                        colors =    SwitchDefaults.colors(checkedTrackColor = streakColor,
+                                checkedThumbColor = if (streakColor == Color.White) Color.Black else Color.White,
+                            )
                         )
                     }
 
@@ -306,8 +316,8 @@ fun EditStreakScreen(
                                 isEternity = it
                                 isEternityText = "Eternity?"
                             },
-                            colors = SwitchDefaults.colors(checkedTrackColor = streakColor)
-                        )
+                            colors = SwitchDefaults.colors(checkedTrackColor = streakColor,
+                                checkedThumbColor = if (streakColor == Color.White) Color.Black else Color.White)                        )
                     }
 
                     // === TOGGLE REMINDER ===
@@ -346,7 +356,8 @@ fun EditStreakScreen(
 
 
                             },
-                            colors = SwitchDefaults.colors(checkedTrackColor = streakColor)
+                            colors = SwitchDefaults.colors(checkedTrackColor = streakColor,
+                                checkedThumbColor = if (streakColor == Color.White) Color.Black else Color.White)
                         )
                     }
 
@@ -360,13 +371,13 @@ fun EditStreakScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0xFFF0F0F0))
                                 .clickable { showStartDatePicker = true }
-                                .padding(16.dp)
+                                .padding(12.dp)
                         ) {
                             val displayText = confirmedStartDate?.let {
                                 "Tap to Pick another start date"
                             } ?: "Tap to select a start date"
 
-                            Text(displayText)
+                            Text(displayText , fontSize = 15.sp , color = Color.Black)
                         }
 
                         Spacer(modifier = Modifier.size(10.dp))
@@ -376,7 +387,7 @@ fun EditStreakScreen(
                                 state = startDatePickerState,
                                 showModeToggle = true,
                                 colors = DatePickerDefaults.colors(
-                                    containerColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.background,
                                     currentYearContentColor = streakColor,
                                     selectedDayContainerColor = streakColor,
                                     todayDateBorderColor = streakColor,
@@ -442,13 +453,13 @@ fun EditStreakScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0xFFF0F0F0))
                                 .clickable { showEndDatePicker = true }
-                                .padding(16.dp)
+                                .padding(12.dp)
                         ) {
                             val displayText = confirmedEndDate?.let {
                                 "Tap to Pick another end date"
                             } ?: "Tap to select a end date"
 
-                            Text(displayText)
+                            Text(displayText , fontSize = 15.sp , color= Color.Black)
                         }
 
                         Spacer(modifier = Modifier.size(10.dp))
@@ -458,7 +469,7 @@ fun EditStreakScreen(
                                 state = endDatePickerState,
                                 showModeToggle = true,
                                 colors = DatePickerDefaults.colors(
-                                    containerColor = Color.White,
+                                    containerColor =MaterialTheme.colorScheme.background,
                                     currentYearContentColor = streakColor,
                                     selectedDayContainerColor = streakColor,
                                     todayDateBorderColor = streakColor,
@@ -523,13 +534,13 @@ fun EditStreakScreen(
                                     .clickable {
                                         showTimePicker = true
                                     }
-                                    .padding(16.dp)
+                                    .padding(12.dp)
                             ) {
                                 val displayText = selectedTime?.let {
                                     "Tap to Pick another reminder time"
                                 } ?: "Tap to select a reminder time"
 
-                                Text(displayText)
+                                Text(displayText , fontSize = 15.sp , color = Color.Black)
                             }
                         }
 
@@ -664,7 +675,9 @@ fun EditStreakScreen(
 
                         )
                     ) {
-                        Text("Save", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Save", fontSize = 20.sp, fontWeight = FontWeight.SemiBold
+                            , color = if(streakColor == Color.White) Color.Black else Color.White)
+
                     }
 
 

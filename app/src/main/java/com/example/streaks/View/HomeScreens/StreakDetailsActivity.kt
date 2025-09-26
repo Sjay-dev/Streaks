@@ -45,8 +45,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.ViewModel.StreakViewModel
+import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
@@ -64,7 +66,16 @@ class StreakDetailsActivity : ComponentActivity() {
             return
         }
         setContent{
-                    StreakDetailScreen(streakId)
+            val viewModel: StreakViewModel = hiltViewModel()
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+
+            val systemUiController = rememberSystemUiController()
+            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkMode)
+
+            StreaksTheme(darkTheme = isDarkMode) {
+                StreakDetailScreen(streakId)
+
+            }
         }
     }
 }
@@ -76,14 +87,10 @@ fun StreakDetailScreen(
     streakId: Int,
     viewModel: StreakViewModel = hiltViewModel(),
 ) {
-    val systemUiController = rememberSystemUiController()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showEndDialog by remember { mutableStateOf(false) }
 
-    systemUiController.setSystemBarsColor(
-        Color.Transparent,
-        darkIcons = true
-    )
+
 
     val activity: Activity = LocalContext.current as Activity
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -146,7 +153,8 @@ fun StreakDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.endStreak(streakId)
-                    viewModel.cancelAlarm(streakId, context)
+                    viewModel.cancelAlarm(streakId, context
+                    )
                     showEndDialog = false
                     activity.finish()
                 }) {
