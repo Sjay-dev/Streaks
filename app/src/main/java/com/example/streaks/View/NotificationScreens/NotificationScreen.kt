@@ -52,7 +52,7 @@ fun NotificationScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.background),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -68,7 +68,7 @@ fun NotificationScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             items(notifications) { notification ->
                 StreakNotificationItem(notification = notification, viewModel = viewModel)
@@ -109,7 +109,7 @@ fun StreakNotificationItem(
         shape = RoundedCornerShape(12.dp),
         shadowElevation = 4.dp,
         tonalElevation = 6.dp,
-        color = Color.White,
+        color = MaterialTheme.colorScheme.background,
         border = BorderStroke(2.dp, gradientBrush)
     ) {
         Row(
