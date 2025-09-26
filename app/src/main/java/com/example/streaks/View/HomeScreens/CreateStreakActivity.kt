@@ -152,6 +152,7 @@ fun CreateStreakScreen() {
 
     var reminderType by remember { mutableStateOf(NotificationType.DEFAULT) }
 
+    val isDarkMode by viewModel.isDarkMode.collectAsState()
 
     //===KEYBOARD focusManager===
     val focusManager = LocalFocusManager.current
@@ -173,7 +174,9 @@ fun CreateStreakScreen() {
                         .padding(top = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Create A New Streak", fontWeight = Bold, fontSize = 23.sp)
+                    Text("Create A New Streak", fontWeight = Bold, fontSize = 23.sp
+                    , color = if (!isDarkMode) Color.Black else Color.White)
+
                     IconButton(onClick = { activity.finish() }, modifier = Modifier.align(Alignment.CenterStart)) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back_24px),
@@ -202,10 +205,13 @@ fun CreateStreakScreen() {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     textStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    colors = OutlinedTextFieldDefaults.colors(
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
                         focusedLabelColor = streakColor,
                         focusedBorderColor = streakColor
-                    ),
+                        )
+
+                    ,
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions { focusManager.clearFocus() }
                 )
 
@@ -224,10 +230,12 @@ fun CreateStreakScreen() {
                                 .background(presetColor)
                                 .border(
                                     width = if (streakColor == presetColor) 3.dp else 0.dp,
-                                    color = if (streakColor == presetColor) Color.White else streakColor,
+                                    color = if (streakColor == presetColor) MaterialTheme.colorScheme.background else streakColor,
                                     shape = CircleShape
                                 )
-                                .clickable { streakColor = presetColor }
+                                .clickable { if(!isDarkMode) streakColor = presetColor
+                                else streakColor = if(presetColor == Color.Black) Color.White else presetColor
+                                }
                         )
                     }
                 }
@@ -244,7 +252,7 @@ fun CreateStreakScreen() {
                             modifier = Modifier.padding(end = 10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (frequency == option) streakColor else Color.LightGray,
-                                contentColor = if (frequency == option) if (streakColor == Color.Yellow) Color.Black else Color.White else Color.Black
+                                contentColor = if (frequency == option) if (streakColor == Color.White) Color.Black else Color.White else Color.Black
                             )
                         ) {
                             Text(option.name.lowercase().replaceFirstChar { it.uppercase() })
@@ -267,7 +275,9 @@ fun CreateStreakScreen() {
                             isToday = it
                             isTodayText = "Today?"
                         },
-                        colors = SwitchDefaults.colors(checkedTrackColor = streakColor)
+                        colors = SwitchDefaults.colors(checkedTrackColor = streakColor,
+                                checkedThumbColor = if (streakColor == Color.White) Color.Black else Color.White,
+                        )
                     )
                 }
 
@@ -284,7 +294,8 @@ fun CreateStreakScreen() {
                             isEternity = it
                             isEternityText = "Eternity?"
                         },
-                        colors = SwitchDefaults.colors(checkedTrackColor = streakColor)
+                        colors = SwitchDefaults.colors(checkedTrackColor = streakColor,
+                            checkedThumbColor = if (streakColor == Color.White) Color.Black else Color.White)
                     )
                 }
 
@@ -328,7 +339,8 @@ fun CreateStreakScreen() {
 
 
                         },
-                        colors = SwitchDefaults.colors(checkedTrackColor = streakColor)
+                        colors = SwitchDefaults.colors(checkedTrackColor = streakColor,
+                            checkedThumbColor = if (streakColor == Color.White) Color.Black else Color.White)
                     )
                 }
 
@@ -422,7 +434,7 @@ fun CreateStreakScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF0F0F0))
+                            .background( Color(0xFFF0F0F0))
                             .clickable { showEndDatePicker = true }
                             .padding(12.dp)
                     ) {
@@ -442,7 +454,7 @@ fun CreateStreakScreen() {
                             state = endDatePickerState,
                             showModeToggle = true,
                             colors = DatePickerDefaults.colors(
-                                containerColor = Color.White,
+                                containerColor = MaterialTheme.colorScheme.background,
                                 currentYearContentColor = streakColor,
                                 selectedDayContainerColor = streakColor,
                                 todayDateBorderColor = streakColor,
@@ -639,7 +651,9 @@ fun CreateStreakScreen() {
 
                     )
                 ) {
-                    Text("Create Streak", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Create Streak", fontSize = 20.sp, fontWeight = FontWeight.SemiBold
+                    , color = if(streakColor == Color.White) Color.Black else Color.White)
+
                 }
 
             }

@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -280,7 +281,7 @@ class StreakViewModel @Inject constructor
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White, RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(16.dp))
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -338,7 +339,7 @@ class StreakViewModel @Inject constructor
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TextButton(onClick = { onCancel() }) {
-                    Text("Cancel", fontSize = 16.sp, color = Color.Black)
+                    Text("Cancel", fontSize = 16.sp , color = streakColor)
                 }
                 Button(
                     onClick = {
@@ -350,7 +351,7 @@ class StreakViewModel @Inject constructor
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = streakColor)
                 ) {
-                    Text("Save", fontSize = 16.sp, color = Color.White)
+                    Text("Save", fontSize = 16.sp, color = if (streakColor == Color.White) Color.Black else Color.White)
                 }
             }
         }
