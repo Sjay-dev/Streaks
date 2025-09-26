@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +56,7 @@ import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
+import com.example.streaks.View.SettingsScreens.ThemeMode
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -76,12 +78,18 @@ class EditStreakActivity : ComponentActivity() {
 
         setContent {
             val viewModel: StreakViewModel = hiltViewModel()
-            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            val themeMode by viewModel.themeMode.collectAsState()
+
+            val isDarkTheme = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
 
             val systemUiController = rememberSystemUiController()
-            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkMode)
+            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkTheme)
 
-            StreaksTheme(isDarkMode) {
+            StreaksTheme(darkTheme = isDarkTheme) {
                 EditStreakScreen(streakId = streakId, onBack = { finish() })
             }
         }
@@ -175,8 +183,13 @@ fun EditStreakScreen(
         val presetColors = listOf(Color.Red, Color.Blue, Color.Black, Color.Green, Color.Magenta)
         val frequencyOptions = Frequency.values()
 
-        val isDarkMode by viewModel.isDarkMode.collectAsState()
+        val themeMode by viewModel.themeMode.collectAsState()
 
+        val isDarkTheme = when (themeMode) {
+            ThemeMode.DARK -> true
+            ThemeMode.LIGHT -> false
+            ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        }
         Scaffold(
             topBar = {
                 Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
@@ -248,7 +261,7 @@ fun EditStreakScreen(
                                         color = if (streakColor == presetColor) MaterialTheme.colorScheme.background else streakColor,
                                         shape = CircleShape
                                     )
-                                    .clickable { if(!isDarkMode) streakColor = presetColor
+                                    .clickable { if(!isDarkTheme) streakColor = presetColor
                                     else streakColor = if(presetColor == Color.Black) Color.White else presetColor
                                     }                            )
                         }

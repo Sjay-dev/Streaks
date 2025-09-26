@@ -9,28 +9,39 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 
-private val Context.dataStore by preferencesDataStore(name = "settings")
+private val Context.dataStore by preferencesDataStore(name = "app_settings")
 
 class SettingsDataStore @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val Context.dataStore by preferencesDataStore("app_settings")
-
     private object Keys {
-        val DARK_MODE = booleanPreferencesKey("dark_mode")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
-    val isDarkMode: Flow<Boolean> = context.dataStore.data
-        .map { prefs -> prefs[Keys.DARK_MODE] ?: false }
+    val themeMode: Flow<ThemeMode> = context.dataStore.data
+        .map { prefs ->
+            when (prefs[Keys.THEME_MODE]) {
+                ThemeMode.LIGHT.name -> ThemeMode.LIGHT
+                ThemeMode.DARK.name -> ThemeMode.DARK
+                else -> ThemeMode.SYSTEM
+            }
+        }
 
-    suspend fun setDarkMode(enabled: Boolean) {
+    suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { prefs ->
-            prefs[Keys.DARK_MODE] = enabled
+            prefs[Keys.THEME_MODE] = mode.name
         }
     }
+}
+
+enum class ThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK
 }
 

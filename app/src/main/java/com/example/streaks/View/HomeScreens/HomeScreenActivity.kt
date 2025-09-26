@@ -10,14 +10,18 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +87,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.View.NotificationScreens.NotificationScreen
 import com.example.streaks.View.SettingsScreens.SettingsScreen
+import com.example.streaks.View.SettingsScreens.ThemeMode
 import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.StreaksTheme
@@ -91,6 +96,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+import android.Manifest
+import android.app.AlarmManager
+import android.content.Context
+import android.net.Uri
+import android.provider.Settings
 
 const val CHANNEL = "CHANNEL"
 
@@ -122,15 +132,21 @@ class HomeScreenActivity : ComponentActivity() {
             notificationManager.createNotificationChannel(channel)
         }
         setContent {
+            permissionRequester()
+
             val viewModel: StreakViewModel = hiltViewModel()
-            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            val themeMode by viewModel.themeMode.collectAsState()
+
+            val isDarkTheme = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
 
             val systemUiController = rememberSystemUiController()
-            systemUiController.setSystemBarsColor(
-                Color.Transparent,
-                darkIcons = !isDarkMode
-            )
-            StreaksTheme(darkTheme = isDarkMode) {
+            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkTheme)
+
+            StreaksTheme(darkTheme = isDarkTheme) {
                 scaffoldScreen()
 
             }
@@ -142,6 +158,46 @@ class HomeScreenActivity : ComponentActivity() {
 
     }
 }
+@Composable
+fun permissionRequester() {
+    val context = LocalContext.current
+
+    val permissions = mutableListOf<String>()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        result.forEach { (permission, granted) ->
+            if (!granted) {
+                Toast.makeText(context, "$permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Launch runtime permissions once
+    LaunchedEffect(Unit) {
+        if (permissions.isNotEmpty()) {
+            launcher.launch(permissions.toTypedArray())
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val canScheduleExactAlarms = alarmManager.canScheduleExactAlarms()
+
+            if (!canScheduleExactAlarms) {
+                // Redirect user to system settings to grant exact alarm access
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                }
+                context.startActivity(intent)
+            }
+        }
+    }
+}
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -401,7 +457,7 @@ fun HomeScreen(
                 "No Streak created yet!",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color =MaterialTheme.colorScheme.background
+                color = Color.Blue
             )
         }
     }
@@ -557,6 +613,7 @@ fun BottomNavigationBar(
         }
     }
 }
+
 
 
 

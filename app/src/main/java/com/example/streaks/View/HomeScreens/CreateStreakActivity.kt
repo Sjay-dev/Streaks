@@ -11,6 +11,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import com.example.streaks.Model.Frequency
 import com.example.streaks.Model.NotificationType
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
+import com.example.streaks.View.SettingsScreens.ThemeMode
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -88,15 +90,21 @@ class CreateStreakActivity : ComponentActivity() {
 
         setContent {
             val viewModel: StreakViewModel = hiltViewModel()
-            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            val themeMode by viewModel.themeMode.collectAsState()
 
-            val systemUiController = rememberSystemUiController()
-            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkMode)
-
-            StreaksTheme(darkTheme = isDarkMode) {
-                CreateStreakScreen()
+            val isDarkTheme = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
 
+            val systemUiController = rememberSystemUiController()
+                systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkTheme)
+
+
+            StreaksTheme(darkTheme = isDarkTheme) {
+                CreateStreakScreen()
+            }
         }
     }
 }
@@ -149,8 +157,13 @@ fun CreateStreakScreen() {
 
     var reminderType by remember { mutableStateOf(NotificationType.DEFAULT) }
 
-    val isDarkMode by viewModel.isDarkMode.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
 
+    val isDarkTheme = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     //===KEYBOARD focusManager===
     val focusManager = LocalFocusManager.current
 
@@ -172,7 +185,7 @@ fun CreateStreakScreen() {
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Create A New Streak", fontWeight = Bold, fontSize = 23.sp
-                    , color = if (!isDarkMode) Color.Black else Color.White)
+                    , color = if (!isDarkTheme) Color.Black else Color.White)
 
                     IconButton(onClick = { activity.finish() }, modifier = Modifier.align(Alignment.CenterStart)) {
                         Icon(
@@ -230,7 +243,7 @@ fun CreateStreakScreen() {
                                     color = if (streakColor == presetColor) MaterialTheme.colorScheme.background else streakColor,
                                     shape = CircleShape
                                 )
-                                .clickable { if(!isDarkMode) streakColor = presetColor
+                                .clickable { if(!isDarkTheme) streakColor = presetColor
                                 else streakColor = if(presetColor == Color.Black) Color.White else presetColor
                                 }
                         )

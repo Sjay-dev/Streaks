@@ -54,6 +54,7 @@ import com.example.streaks.Notification.ReminderRecevier
 import com.example.streaks.Notification.STREAK_COLOR
 import com.example.streaks.Notification.STREAK_ID
 import com.example.streaks.View.SettingsScreens.SettingsDataStore
+import com.example.streaks.View.SettingsScreens.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -148,13 +149,12 @@ class StreakViewModel @Inject constructor
         }
     }
 
-    val isDarkMode: StateFlow<Boolean> = settingsDataStore.isDarkMode
-        .stateIn(viewModelScope, SharingStarted.Lazily, false)
+    val themeMode: StateFlow<ThemeMode> = settingsDataStore.themeMode
+        .stateIn(viewModelScope, SharingStarted.Lazily, ThemeMode.SYSTEM)
 
-
-    fun toggleDarkMode(enabled: Boolean) {
+    fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
-            settingsDataStore.setDarkMode(enabled)
+            settingsDataStore.setThemeMode(mode)
         }
     }
 

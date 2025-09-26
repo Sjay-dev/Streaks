@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,6 +48,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.View.SettingsScreens.ThemeMode
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.StreaksTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -67,12 +69,19 @@ class StreakDetailsActivity : ComponentActivity() {
         }
         setContent{
             val viewModel: StreakViewModel = hiltViewModel()
-            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            val themeMode by viewModel.themeMode.collectAsState()
+
+            val isDarkTheme = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
 
             val systemUiController = rememberSystemUiController()
-            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkMode)
+            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkTheme)
 
-            StreaksTheme(darkTheme = isDarkMode) {
+
+            StreaksTheme(darkTheme = isDarkTheme) {
                 StreakDetailScreen(streakId)
 
             }
