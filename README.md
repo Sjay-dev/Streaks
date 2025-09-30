@@ -23,8 +23,7 @@ With Streaks, users can set custom streaks, track progress over time, and stay m
 ## 🎥 Demo Video
 
 <p align="center">
-  <a href="https://github.com/yourusername/streaks/raw/main/demo/streaks_demo.mp4">
-    ▶️ Watch App Demo
+  <a href="lv_0_20250930193723.mp4">
   </a>
 </p>
 
