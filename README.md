@@ -8,9 +8,16 @@ With Streaks, users can set custom streaks, track progress over time, and stay m
 ## 📱 Screenshots
 
 <p align="center">
-  <img src="screenshots/home.png" alt="Home Screen" width="250"/>
-  <img src="screenshots/create_streak.png" alt="Create Streak" width="250"/>
-  <img src="screenshots/progress.png" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_175536_Streak.jpg" alt="Home Screen" width="250"/>
+  <img src="Screenshot_20250930_175315_Streak.jpg" alt="Create Streak" width="250"/>
+  <img src="Screenshot_20250930_175349_Streak.jpg" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_175431_Streak.jpg" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_175527_Streak.jpg" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_175536_Streak.jpg" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_180002_Streak.jpg" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_180022_Streak.jpg" alt="Progress Screen" width="250"/>
+  <img src="Screenshot_20250930_180028_Streak.jpg" alt="Progress Screen" width="250"/>
+
 </p>
 
 ---
