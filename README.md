@@ -8,16 +8,14 @@ With Streaks, users can set custom streaks, track progress over time, and stay m
 ## 📱 Screenshots
 
 <p align="center">
-  <img src="Screenshot_20250930_175536_Streak.jpg" alt="Home Screen" width="250"/>
-  <img src="Screenshot_20250930_175315_Streak.jpg" alt="Create Streak" width="250"/>
-  <img src="Screenshot_20250930_175349_Streak.jpg" alt="Progress Screen" width="250"/>
-  <img src="Screenshot_20250930_175431_Streak.jpg" alt="Progress Screen" width="250"/>
-  <img src="Screenshot_20250930_175527_Streak.jpg" alt="Progress Screen" width="250"/>
-  <img src="Screenshot_20250930_175536_Streak.jpg" alt="Progress Screen" width="250"/>
-  <img src="Screenshot_20250930_180002_Streak.jpg" alt="Progress Screen" width="250"/>
-  <img src="Screenshot_20250930_180022_Streak.jpg" alt="Progress Screen" width="250"/>
-  <img src="Screenshot_20250930_180028_Streak.jpg" alt="Progress Screen" width="250"/>
-
+    <img src="Screenshot_20250930_175315_Streak.jpg" alt="Home Screen Light mode" width="250"/>
+    <img src="Screenshot_20250930_175349_Streak.jpg" alt="Home Screen Dark mode" width="250"/>
+    <img src="Screenshot_20250930_175431_Streak.jpg" alt="Create Streak Screen" width="250"/>
+    <img src="Screenshot_20250930_175527_Streak.jpg" alt="Home Screen with streak" width="250"/>
+    <img src="Screenshot_20250930_175536_Streak.jpg" alt="Streak Details Screen" width="250"/>
+  <img src="Screenshot_20250930_180002_Streak.jpg" alt="Notifcation message" width="250"/>
+  <img src="Screenshot_20250930_180022_Streak.jpg" alt="Notification Screen" width="250"/>
+  <img src="Screenshot_20250930_180028_Streak.jpg" alt="Notification Screen dark  mode" width="250"/>
 </p>
 
 ---
@@ -30,7 +28,6 @@ With Streaks, users can set custom streaks, track progress over time, and stay m
   </a>
 </p>
 
-*(Or upload your video to YouTube and replace the link with the YouTube URL)*
 
 ---
 
