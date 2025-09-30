@@ -20,15 +20,6 @@ With Streaks, users can set custom streaks, track progress over time, and stay m
 
 ---
 
-## 🎥 Demo Video
-
-<p align="center">
-  <a href="lv_0_20250930193723.mp4">
-  </a>
-</p>
-
-
----
 
 ## ✨ Features
 - ✅ Create and manage custom streaks  
