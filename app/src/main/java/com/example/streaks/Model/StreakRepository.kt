@@ -51,6 +51,33 @@ class StreakRepository @Inject constructor(
         }
     }
 
+    suspend fun archiveStreaks(streakIds: Set<Int>, now: Long = System.currentTimeMillis()) {
+        if (streakIds.isEmpty()) return
+        database.withTransaction {
+            streakIds.forEach { streakId ->
+                dao.getStreakById(streakId)?.takeIf { it.archivedAtMillis == null }?.let {
+                    dao.updateStreak(it.copy(archivedAtMillis = now, reminderTime = null))
+                }
+                dao.deleteRemindersForGoal(streakId)
+            }
+        }
+    }
+
+    suspend fun deleteStreaks(streakIds: Set<Int>) {
+        if (streakIds.isEmpty()) return
+        database.withTransaction {
+            streakIds.forEach { streakId ->
+                dao.getStreakById(streakId)?.let { streak ->
+                    dao.deleteAttemptsForStreak(streakId)
+                    dao.deleteUrgesForStreak(streakId)
+                    dao.deleteRemindersForGoal(streakId)
+                    dao.deleteStreak(streak)
+                    notificationDao.deleteForStreak(streakId)
+                }
+            }
+        }
+    }
+
     suspend fun recordSetback(streakId: Int, atMillis: Long, note: String): SetbackResult? =
         database.withTransaction {
             val streak = dao.getStreakById(streakId) ?: return@withTransaction null

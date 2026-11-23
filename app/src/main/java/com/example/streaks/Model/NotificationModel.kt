@@ -2,9 +2,13 @@ package com.example.streaks.Model
 
 import androidx.compose.ui.graphics.Color
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "Notifications")
+@Entity(
+    tableName = "Notifications",
+    indices = [Index(value = ["reminderId", "scheduledForMillis"], unique = true)]
+)
 data class NotificationModel(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
@@ -14,10 +18,20 @@ data class NotificationModel(
     val message: String,
     val timestamp: Long = System.currentTimeMillis(),
     val status: Status,
-    val frequency: Frequency
+    val frequency: Frequency,
+    val reminderId: Int = 0,
+    val scheduledForMillis: Long = timestamp,
+    val outcome: ReminderOutcome = ReminderOutcome.POSTED
 )
 
 enum class Status{
       Cancelled,OnGoing
+}
+
+enum class ReminderOutcome {
+    POSTED,
+    BLOCKED_PERMISSION,
+    BLOCKED_CHANNEL,
+    SKIPPED
 }
 

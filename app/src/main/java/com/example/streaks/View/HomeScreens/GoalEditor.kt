@@ -1,10 +1,7 @@
 package com.example.streaks.View.HomeScreens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,19 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,11 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,6 +44,7 @@ import com.example.streaks.Model.StreakModel
 import com.example.streaks.R
 import com.example.streaks.View.Components.InlineDateTimePicker
 import com.example.streaks.View.Components.InlineEditor
+import com.example.streaks.View.Components.ColorPalette
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.onAccent
 import com.example.streaks.ui.theme.readableAccent
@@ -84,14 +75,13 @@ fun GoalEditorScreen(existing: StreakModel?, onBack: () -> Unit, onSave: (Streak
     val effectiveAccent = if (usesAppAccent) appAccent else color
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val scheme = MaterialTheme.colorScheme.copy(primary = readableAccent(effectiveAccent, dark), onPrimary = onAccent(readableAccent(effectiveAccent, dark)))
-    val colors = listOf(Color(0xFF17689A), Color(0xFF2E7D32), Color(0xFFC62828), Color(0xFFFFE082), Color.White, Color.Black, Color(0xFF7B1FA2))
-    val names = listOf("Blue", "Green", "Red", "Yellow", "White", "Black", "Purple")
-
     MaterialTheme(colorScheme = scheme) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = { TopAppBar(
                 title = { Text(stringResource(if (existing == null) R.string.create_goal else R.string.edit_goal)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             ) }
         ) { padding ->
             Column(
@@ -107,20 +97,22 @@ fun GoalEditorScreen(existing: StreakModel?, onBack: () -> Unit, onSave: (Streak
                     maxDate = LocalDate.now()
                 )
                 Text(stringResource(R.string.color), style = MaterialTheme.typography.labelLarge)
-                TextButton(onClick = { usesAppAccent = true }, modifier = Modifier.semantics { selected = usesAppAccent }) {
-                    if (usesAppAccent) Icon(Icons.Default.Check, null)
-                    Text("Use app color")
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    colors.forEachIndexed { index, choice ->
-                        val selectedColor = !usesAppAccent && choice == color
-                        Box(
-                            Modifier.size(44.dp).semantics { contentDescription = names[index]; selected = selectedColor; role = Role.RadioButton }
-                                .background(choice, CircleShape).border(2.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                                .clickable { color = choice; usesAppAccent = false }, contentAlignment = Alignment.Center
-                        ) { if (selectedColor) Icon(Icons.Default.Check, null, tint = if (choice.luminance() > .5f) Color.Black else Color.White) }
+                Row(
+                    Modifier.fillMaxWidth().clickable { usesAppAccent = true }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = usesAppAccent, onClick = { usesAppAccent = true })
+                    Column(Modifier.padding(start = 8.dp)) {
+                        Text("Use app color", fontWeight = FontWeight.SemiBold)
+                        Text("Follows changes made in Settings", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
+                Text("Or choose a fixed goal color", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ColorPalette(
+                    selectedColor = if (usesAppAccent) Color.Unspecified else color,
+                    onColorSelected = { color = it; usesAppAccent = false },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Text(stringResource(R.string.personal_plan), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 OutlinedTextField(why, { why = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.why_optional)) }, maxLines = 3)
                 OutlinedTextField(urgeAction, { urgeAction = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.urge_action_optional)) }, supportingText = { Text(stringResource(R.string.urge_action_hint)) }, maxLines = 3)

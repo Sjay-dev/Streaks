@@ -30,6 +30,8 @@ class StreakViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
     val appAccent: StateFlow<Long> = settings.appAccent
         .stateIn(viewModelScope, SharingStarted.Eagerly, SettingsDataStore.DEFAULT_APP_ACCENT)
+    val displayName: StateFlow<String> = settings.displayName
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SettingsDataStore.DEFAULT_DISPLAY_NAME)
     val reminderSchedules: StateFlow<List<ReminderSchedule>> = repository.observeReminders()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -68,6 +70,26 @@ class StreakViewModel @Inject constructor(
         onArchived()
     }
 
+    fun archiveStreaks(streakIds: Set<Int>, onArchived: () -> Unit = {}) = viewModelScope.launch {
+        val reminderIds = streakIds.associateWith { repository.remindersForGoal(it).map(ReminderSchedule::reminderId) }
+        repository.archiveStreaks(streakIds)
+        reminderIds.forEach { (streakId, ids) ->
+            reminders.cancel(streakId)
+            ids.forEach(reminders::cancelReminder)
+        }
+        onArchived()
+    }
+
+    fun deleteStreaks(streakIds: Set<Int>, onDeleted: () -> Unit = {}) = viewModelScope.launch {
+        val reminderIds = streakIds.associateWith { repository.remindersForGoal(it).map(ReminderSchedule::reminderId) }
+        repository.deleteStreaks(streakIds)
+        reminderIds.forEach { (streakId, ids) ->
+            reminders.cancel(streakId)
+            ids.forEach(reminders::cancelReminder)
+        }
+        onDeleted()
+    }
+
     fun recordSetback(streakId: Int, atMillis: Long, note: String, onComplete: (SetbackResult?) -> Unit) =
         viewModelScope.launch { onComplete(repository.recordSetback(streakId, atMillis, note)) }
 
@@ -75,12 +97,14 @@ class StreakViewModel @Inject constructor(
         onComplete(repository.undoSetback(result))
     }
 
-    fun recordUrge(streakId: Int, trigger: String, whatHelped: String) = viewModelScope.launch {
+    fun recordUrge(streakId: Int, trigger: String, whatHelped: String, onSaved: () -> Unit = {}) = viewModelScope.launch {
         if (trigger.isNotBlank() || whatHelped.isNotBlank()) repository.recordUrge(streakId, trigger, whatHelped)
+        onSaved()
     }
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settings.setThemeMode(mode) }
     fun setAppAccent(color: Long) = viewModelScope.launch { settings.setAppAccent(color) }
+    fun setDisplayName(name: String) = viewModelScope.launch { settings.setDisplayName(name) }
 
     fun saveReminder(reminder: ReminderSchedule, onSaved: (Int) -> Unit = {}) = viewModelScope.launch {
         val id = if (reminder.reminderId == 0) repository.saveReminder(reminder) else {

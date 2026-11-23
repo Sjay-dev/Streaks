@@ -7,6 +7,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.streaks.Model.DataBase.StreakDataBase
 import com.example.streaks.Model.NotificationRepository
+import com.example.streaks.Model.NotificationModel
+import com.example.streaks.Model.Frequency
+import com.example.streaks.Model.ReminderOutcome
+import com.example.streaks.Model.ReminderSchedule
+import com.example.streaks.Model.Status
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.StreakRepository
 import kotlinx.coroutines.async
@@ -39,7 +44,7 @@ class DatabaseMigrationTest {
         val name = "migration-${System.nanoTime()}.db".also(names::add)
         createV1Database(name)
         val db = Room.databaseBuilder(context, StreakDataBase::class.java, name)
-            .addMigrations(StreakDataBase.MIGRATION_1_2, StreakDataBase.MIGRATION_2_3).build().also(databases::add)
+            .addMigrations(StreakDataBase.MIGRATION_1_2, StreakDataBase.MIGRATION_2_3, StreakDataBase.MIGRATION_3_4).build().also(databases::add)
         val goals = db.streakDao().getAllStreaks().first()
 
         assertEquals(3, goals.size)
@@ -85,6 +90,49 @@ class DatabaseMigrationTest {
         assertTrue(repository.undoSetback(results.firstNotNullOf { it }))
         assertTrue(repository.observeAttempts(id).first().isEmpty())
         assertEquals(start, repository.getStreakById(id)?.currentAttemptStartedAtMillis)
+    }
+
+    @Test fun bulkArchive_andDelete_preserveAlreadyArchivedDates_andRemoveRelations() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(context, StreakDataBase::class.java).build().also(databases::add)
+        val repository = StreakRepository(db.streakDao(), db.notificationDao(), db)
+        val activeId = repository.insertStreak(StreakModel(streakName = "Active"))
+        val originalEnd = 1234L
+        val archivedId = repository.insertStreak(StreakModel(streakName = "Archived", archivedAtMillis = originalEnd))
+        repository.saveReminder(ReminderSchedule(streakId = activeId))
+
+        repository.archiveStreaks(setOf(activeId, archivedId), now = 9999L)
+        assertEquals(9999L, repository.getStreakById(activeId)?.archivedAtMillis)
+        assertEquals(originalEnd, repository.getStreakById(archivedId)?.archivedAtMillis)
+        assertTrue(repository.remindersForGoal(activeId).isEmpty())
+
+        repository.deleteStreaks(setOf(activeId, archivedId))
+        assertNull(repository.getStreakById(activeId))
+        assertNull(repository.getStreakById(archivedId))
+    }
+
+    @Test fun reminderHistory_hasOneRowPerScheduledOccurrence() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(context, StreakDataBase::class.java).build().also(databases::add)
+        val repository = NotificationRepository(db.notificationDao())
+        val occurrence = NotificationModel(
+            streakId = 1,
+            streakName = "",
+            message = "",
+            status = Status.OnGoing,
+            frequency = Frequency.DAILY,
+            reminderId = 42,
+            scheduledForMillis = 9999L,
+            outcome = ReminderOutcome.POSTED
+        )
+        assertTrue(repository.addNotification(occurrence) > 0)
+        assertEquals(-1L, repository.addNotification(occurrence))
+        assertEquals(1, repository.getAllNotifications().first().size)
+    }
+
+    @Test fun blackAndWhite_accentsRemainReadableInBothThemes() {
+        assertEquals(androidx.compose.ui.graphics.Color.Black, com.example.streaks.ui.theme.readableAccent(androidx.compose.ui.graphics.Color.White, false))
+        assertEquals(androidx.compose.ui.graphics.Color.White, com.example.streaks.ui.theme.readableAccent(androidx.compose.ui.graphics.Color.Black, true))
+        assertEquals(androidx.compose.ui.graphics.Color.White, com.example.streaks.ui.theme.readableAccent(androidx.compose.ui.graphics.Color.White, true))
+        assertEquals(androidx.compose.ui.graphics.Color.Black, com.example.streaks.ui.theme.readableAccent(androidx.compose.ui.graphics.Color.Black, false))
     }
 
     private fun createV1Database(name: String) {

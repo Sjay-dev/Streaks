@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -93,7 +94,7 @@ private fun DetailsRoute(id: Int, vm: StreakViewModel, onBack: () -> Unit, open:
     val rawAccent = Color((if (current?.usesAppAccent != false) appAccent else current.streakColor).toULong())
     val accent = readableAccent(rawAccent, MaterialTheme.colorScheme.background.luminance() < .5f)
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent(accent))) {
-    Scaffold(topBar = {
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         TopAppBar(
             title = { Text(current?.streakName ?: stringResource(R.string.details_title)) },
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
@@ -106,7 +107,8 @@ private fun DetailsRoute(id: Int, vm: StreakViewModel, onBack: () -> Unit, open:
                         DropdownMenuItem({ Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }, { menu = false; deleteConfirm = true })
                     }
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
         )
     }) { padding ->
         if (current == null) CircularProgressIndicator(Modifier.padding(padding))
@@ -130,7 +132,7 @@ private fun DetailsContent(goal: StreakModel, attempts: List<AttemptModel>, padd
     val endDate = goal.archivedAtMillis?.takeIf { it > 0 }?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() } ?: goal.endDate
     LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f))) {
+            Card(shape = RoundedCornerShape(22.dp), colors = neutralCardColors()) {
                 Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(if (archived) stringResource(R.string.archived) else stringResource(R.string.current_streak), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(pluralStringResource(R.plurals.streak_days, current.days.toInt(), current.days), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
@@ -154,7 +156,14 @@ private fun DetailsContent(goal: StreakModel, attempts: List<AttemptModel>, padd
     }
 }
 
-@Composable private fun InfoCard(title: String, body: String) { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(title, fontWeight = FontWeight.SemiBold); Text(body) } } }
+@Composable
+private fun neutralCardColors() = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+
+@Composable private fun InfoCard(title: String, body: String) {
+    Card(Modifier.fillMaxWidth(), colors = neutralCardColors()) {
+        Column(Modifier.padding(16.dp)) { Text(title, fontWeight = FontWeight.SemiBold); Text(body) }
+    }
+}
 
 @Composable
 private fun AttemptRow(number: Int, attempt: AttemptModel) {

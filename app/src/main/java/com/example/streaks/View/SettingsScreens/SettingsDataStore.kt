@@ -20,6 +20,7 @@ class SettingsDataStore @Inject constructor(
     private object Keys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val APP_ACCENT = longPreferencesKey("app_accent")
+        val DISPLAY_NAME = stringPreferencesKey("display_name")
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data
@@ -45,8 +46,17 @@ class SettingsDataStore @Inject constructor(
         context.dataStore.edit { it[Keys.APP_ACCENT] = color }
     }
 
+    val displayName: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[Keys.DISPLAY_NAME]?.trim()?.takeIf(String::isNotEmpty) ?: DEFAULT_DISPLAY_NAME
+    }
+
+    suspend fun setDisplayName(name: String) {
+        context.dataStore.edit { it[Keys.DISPLAY_NAME] = name.trim() }
+    }
+
     companion object {
         val DEFAULT_APP_ACCENT: Long = Color(0xFF17689A).value.toLong()
+        const val DEFAULT_DISPLAY_NAME = "User"
     }
 }
 

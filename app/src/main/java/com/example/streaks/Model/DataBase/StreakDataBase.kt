@@ -14,7 +14,7 @@ import com.example.streaks.Model.UrgeEventModel
 
 @Database(
     entities = [StreakModel::class, NotificationModel::class, AttemptModel::class, UrgeEventModel::class, ReminderSchedule::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -48,6 +48,15 @@ abstract class StreakDataBase : RoomDatabase() {
                 db.execSQL("INSERT INTO ReminderSchedules (streakId, time, repeatDays, enabled, destination, message, sound, vibration) SELECT streakId, reminderTime, 127, 1, 'URGE_PLAN', 'A moment for yourself.', CASE notificationType WHEN 'SILENT' THEN 'SILENT' ELSE 'PHONE_DEFAULT' END, 1 FROM Streaks WHERE reminderTime IS NOT NULL AND archivedAtMillis IS NULL")
                 // The schedule table is now authoritative; clearing the legacy field prevents duplicate alarms.
                 db.execSQL("UPDATE Streaks SET reminderTime = NULL WHERE reminderTime IS NOT NULL")
+            }
+        }
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE Notifications ADD COLUMN reminderId INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE Notifications ADD COLUMN scheduledForMillis INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE Notifications ADD COLUMN outcome TEXT NOT NULL DEFAULT 'POSTED'")
+                db.execSQL("UPDATE Notifications SET reminderId = -id, scheduledForMillis = timestamp")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_Notifications_reminderId_scheduledForMillis ON Notifications (reminderId, scheduledForMillis)")
             }
         }
     }

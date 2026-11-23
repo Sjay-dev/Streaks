@@ -56,6 +56,14 @@ class StreakTimeTest {
         assertEquals(LocalTime.of(20, 30), result.toLocalTime())
     }
 
+    @Test fun reminder_just_after_scheduled_time_moves_to_next_valid_day() {
+        val zone = ZoneId.of("Africa/Lagos")
+        val now = java.time.ZonedDateTime.of(2026, 6, 10, 20, 30, 1, 0, zone).toInstant().toEpochMilli()
+        val result = Instant.ofEpochMilli(nextReminderAtMillis(LocalTime.of(20, 30), 0b1111111, now, zone)).atZone(zone)
+        assertEquals(LocalDate.of(2026, 6, 11), result.toLocalDate())
+        assertEquals(LocalTime.of(20, 30), result.toLocalTime())
+    }
+
     @Test fun explicit_midnight_is_not_treated_as_unknown_time() {
         val midnight = Instant.parse("2026-01-01T00:00:00Z").toEpochMilli()
         val value = currentDurationValue(StreakModel(startDate = LocalDate.of(2026, 1, 1), currentAttemptStartedAtMillis = midnight), midnight + 60_000)

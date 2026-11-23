@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NotificationDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(notification: NotificationModel): Long
 
     @Query("SELECT * FROM Notifications ORDER BY timestamp DESC")

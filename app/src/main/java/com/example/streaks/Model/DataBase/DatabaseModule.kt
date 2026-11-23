@@ -17,7 +17,7 @@ object DatabaseModule {
     @Provides @Singleton
     fun provideDatabase(@ApplicationContext context: Context): StreakDataBase =
         Room.databaseBuilder(context, StreakDataBase::class.java, "streaks_db")
-            .addMigrations(StreakDataBase.MIGRATION_1_2, StreakDataBase.MIGRATION_2_3)
+            .addMigrations(StreakDataBase.MIGRATION_1_2, StreakDataBase.MIGRATION_2_3, StreakDataBase.MIGRATION_3_4)
             .build()
 
     @Provides fun provideStreakDao(database: StreakDataBase): StreakDao = database.streakDao()

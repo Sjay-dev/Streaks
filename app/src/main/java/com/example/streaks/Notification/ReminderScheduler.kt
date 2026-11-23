@@ -19,6 +19,7 @@ import javax.inject.Singleton
 const val EXTRA_STREAK_ID = "streak_id"
 const val EXTRA_REMINDER_ID = "reminder_id"
 const val EXTRA_OPEN_URGE_PLAN = "open_urge_plan"
+const val EXTRA_SCHEDULED_FOR = "scheduled_for"
 
 @Singleton
 class ReminderScheduler @Inject constructor(@param:ApplicationContext private val context: Context) {
@@ -28,13 +29,18 @@ class ReminderScheduler @Inject constructor(@param:ApplicationContext private va
     fun schedule(streak: StreakModel, nowMillis: Long = System.currentTimeMillis()) {
         val time = streak.reminderTime ?: return cancel(streak.streakId)
         if (streak.archivedAtMillis != null) return cancel(streak.streakId)
-        scheduleAlarm(streak.streakId, nextReminderAtMillis(time, nowMillis, ZoneId.systemDefault()), legacyPending(streak.streakId))
+        val trigger = nextReminderAtMillis(time, nowMillis, ZoneId.systemDefault())
+        scheduleAlarm(streak.streakId, trigger, legacyPending(streak.streakId, trigger))
     }
 
-    fun schedule(reminder: ReminderSchedule, nowMillis: Long = System.currentTimeMillis()) {
-        if (!reminder.enabled || reminder.repeatDays == 0) return cancelReminder(reminder.reminderId)
+    fun schedule(reminder: ReminderSchedule, nowMillis: Long = System.currentTimeMillis()): Long? {
+        if (!reminder.enabled || reminder.repeatDays == 0) {
+            cancelReminder(reminder.reminderId)
+            return null
+        }
         val trigger = nextReminderAtMillis(reminder.time, reminder.repeatDays, nowMillis, ZoneId.systemDefault())
-        scheduleAlarm(reminder.reminderId, trigger, reminderPending(reminder.reminderId))
+        scheduleAlarm(reminder.reminderId, trigger, reminderPending(reminder.reminderId, trigger))
+        return trigger
     }
 
     @SuppressLint("ScheduleExactAlarm")
@@ -53,20 +59,24 @@ class ReminderScheduler @Inject constructor(@param:ApplicationContext private va
     }
 
     fun cancelReminder(reminderId: Int) {
-        reminderPending(reminderId).also { alarmManager.cancel(it); it.cancel() }
+        reminderPending(reminderId, 0L).also { alarmManager.cancel(it); it.cancel() }
     }
 
     fun cancelAll(streaks: Iterable<StreakModel>) = streaks.forEach { cancel(it.streakId) }
 
-    private fun legacyPending(streakId: Int) = PendingIntent.getBroadcast(
+    private fun legacyPending(streakId: Int, scheduledFor: Long = 0L) = PendingIntent.getBroadcast(
         context, -streakId,
-        Intent(context, ReminderReceiver::class.java).putExtra(EXTRA_STREAK_ID, streakId),
+        Intent(context, ReminderReceiver::class.java)
+            .putExtra(EXTRA_STREAK_ID, streakId)
+            .putExtra(EXTRA_SCHEDULED_FOR, scheduledFor),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    private fun reminderPending(reminderId: Int) = PendingIntent.getBroadcast(
+    private fun reminderPending(reminderId: Int, scheduledFor: Long) = PendingIntent.getBroadcast(
         context, reminderId,
-        Intent(context, ReminderReceiver::class.java).putExtra(EXTRA_REMINDER_ID, reminderId),
+        Intent(context, ReminderReceiver::class.java)
+            .putExtra(EXTRA_REMINDER_ID, reminderId)
+            .putExtra(EXTRA_SCHEDULED_FOR, scheduledFor),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 }
