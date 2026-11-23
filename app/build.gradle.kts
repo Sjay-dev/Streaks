@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.streaks"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.2.4"
+        versionCode = 2
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -72,8 +72,8 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.30.1")
     implementation("androidx.compose.foundation:foundation:1.7.0")
 
-    implementation("com.google.dagger:hilt-android:2.51")
-    kapt("com.google.dagger:hilt-compiler:2.51")
+    implementation("com.google.dagger:hilt-android:2.57.2")
+    kapt("com.google.dagger:hilt-compiler:2.57.2")
 
     implementation(libs.androidx.room.runtime.android)
     kapt(libs.androidx.room.compiler)
@@ -86,4 +86,10 @@ dependencies {
     //DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+}
+
+kapt {
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
 }

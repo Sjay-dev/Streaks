@@ -1,238 +1,104 @@
 package com.example.streaks.View.NotificationScreens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import android.content.Intent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.streaks.Model.NotificationModel
-import com.example.streaks.Model.Status
-import com.example.streaks.ViewModel.NotificationViewModel
+import com.example.streaks.Model.ReminderDestination
+import com.example.streaks.Model.ReminderSchedule
+import com.example.streaks.Notification.EXTRA_REMINDER_ID
+import com.example.streaks.Notification.nextReminderAtMillis
 import com.example.streaks.ViewModel.StreakViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-
 @Composable
-fun NotificationScreen(
-    paddingValues: PaddingValues,
-    viewModel: NotificationViewModel = hiltViewModel()
-) {
-
-    val notifications by viewModel.notifications.collectAsState()
-
-    if (notifications.isEmpty()) {
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "No Notification yet!",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Blue
-            )
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            items(notifications) { notification ->
-                StreakNotificationItem(notification = notification, viewModel = viewModel)
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
-fun StreakNotificationItem(
-    notification: NotificationModel , viewModel: NotificationViewModel) {
-
-    val streakColor = Color(notification.streakColor.toULong())
-    val streakViewModel : StreakViewModel = hiltViewModel()
-    var showEndDialog by remember { mutableStateOf(false) }
-
-    val  context = LocalContext.current
-
-    // Gradient border
-    val gradientBrush = Brush.linearGradient(
-
-        colors = listOf(
-            streakColor.copy(alpha = 0.9f),
-            streakColor.copy(alpha = 0.4f),
-            streakColor.copy(alpha = 0.9f)
-        ),
-        start = Offset(0f, 0f),
-        end = Offset(400f, 400f)
-    )
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 4.dp,
-        tonalElevation = 6.dp,
-        color = MaterialTheme.colorScheme.background,
-        border = BorderStroke(2.dp, gradientBrush)
+fun NotificationScreen(paddingValues: PaddingValues, viewModel: StreakViewModel) {
+    val reminders by viewModel.reminderSchedules.collectAsState()
+    val history by androidx.hilt.navigation.compose.hiltViewModel<com.example.streaks.ViewModel.NotificationViewModel>().notifications.collectAsState()
+    val context = LocalContext.current
+    var showHistory by remember { mutableStateOf(false) }
+    fun open(id: Int = 0) { context.startActivity(Intent(context, ReminderEditorActivity::class.java).putExtra(EXTRA_REMINDER_ID, id)) }
+    val now = System.currentTimeMillis()
+    val ordered = reminders.sortedWith(compareBy<ReminderSchedule> { !it.enabled }.thenBy {
+        if (it.enabled) nextReminderAtMillis(it.time, it.repeatDays, now, ZoneId.systemDefault()) else Long.MAX_VALUE
+    })
+    LazyColumn(
+        Modifier.fillMaxSize().padding(paddingValues), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Left side: streak info
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = notification.streakName,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = streakColor
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Status badge
-                    val statusColor = when (notification.status) {
-                        Status.OnGoing -> Color(0xFF4CAF50)
-                        Status.Cancelled -> Color.Red
-                    }
-                    Text(
-                        text = notification.status.name,
-                        color = statusColor,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier
-                            .background(
-                                statusColor.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Frequency + Time
-                val formattedTime = remember(notification.timestamp) {
-                    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
-                    Instant.ofEpochMilli(notification.timestamp)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalTime()
-                        .format(formatter)
-                }
-
-                val frequencyText = notification.frequency.name
-                    .lowercase()
-                    .replaceFirstChar { it.uppercase() }
-
-                Text(
-                    buildAnnotatedString {
-                        append("Freq: ")
-
-                        withStyle(style = SpanStyle(color = streakColor)) {
-                            append(frequencyText)
-                        }
-
-                        append(" • $formattedTime")
-                    },
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
+        if (ordered.isEmpty()) item {
+            Column(Modifier.fillMaxWidth().padding(vertical = 72.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text("No reminders scheduled", style = MaterialTheme.typography.titleLarge)
+                Text("Add a discreet reminder for a moment when support may help.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Button(onClick = { open() }) { Icon(Icons.Default.Add, null); Text("Add reminder") }
             }
-
-            //Show End Streak Dialog
-            if (showEndDialog) {
-                AlertDialog(
-                    onDismissRequest = { showEndDialog = false },
-                    title = { Text("End Streak") },
-                    text = { Text("Are you sure you want to end this streak immediately?") },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            viewModel.updateStatus(notification.id, Status.Cancelled)
-                            streakViewModel.endStreak(notification.streakId)
-                            viewModel.deleteNotification(notification.id)
-                            streakViewModel.cancelAlarm(notification.streakId , context)
-                        }) {
-                            Text("End", color = Color.Red)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showEndDialog = false }) {
-                            Text("Cancel")
-                        }
-                    }
-                )
+        } else {
+            item { Button(onClick = { open() }) { Icon(Icons.Default.Add, null); Text("Add reminder") } }
+            items(ordered, key = { it.reminderId }) { reminder ->
+                ReminderRow(reminder, { open(reminder.reminderId) }) { viewModel.setReminderEnabled(reminder, it) }
             }
-
-            // Right side: actions
-            Row {
-                IconButton(onClick ={
-                    viewModel.updateStatus(notification.id, Status.OnGoing)
-                    viewModel.deleteNotification(notification.id)
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Mark as Done",
-                        tint = Color(0xFF4CAF50)
-                    )
-                }
-                IconButton(onClick = { showEndDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel Reminder",
-                        tint = Color.Red
-                    )
+        }
+        item {
+            TextButton(onClick = { showHistory = !showHistory }) { Text(if (showHistory) "Hide reminder history" else "Reminder history (${history.size})") }
+        }
+        if (showHistory) items(history, key = { "history-${it.id}" }) { item ->
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .4f))) {
+                Column(Modifier.padding(14.dp)) {
+                    Text("Reminder delivered", fontWeight = FontWeight.Medium)
+                    Text(Instant.ofEpochMilli(item.timestamp).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm")), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 }
 
+@Composable
+private fun ReminderRow(reminder: ReminderSchedule, onOpen: () -> Unit, onEnabled: (Boolean) -> Unit) {
+    val formatter = DateTimeFormatter.ofPattern("h:mm a")
+    Card(Modifier.fillMaxWidth().clickable(onClick = onOpen), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f))) {
+        Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(reminder.time.format(formatter), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text(repeatSummary(reminder.repeatDays), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (reminder.destination == ReminderDestination.URGE_PLAN) "Opens urge plan" else "Opens goal details", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!reminder.enabled) Text("Paused", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+            }
+            Switch(reminder.enabled, onEnabled, modifier = Modifier)
+        }
+    }
+}
 
-
-
-
-
-
-
-
+fun repeatSummary(mask: Int): String {
+    if (mask == 0b1111111) return "Every day"
+    val labels = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+    return labels.filterIndexed { index, _ -> mask and (1 shl index) != 0 }.joinToString(", ").ifBlank { "No repeat days" }
+}

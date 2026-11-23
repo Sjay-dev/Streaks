@@ -1,624 +1,187 @@
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package com.example.streaks.View.HomeScreens
 
-
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.RingtoneManager
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.rememberNavController
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.Model.currentDurationValue
+import com.example.streaks.Notification.EXTRA_OPEN_URGE_PLAN
+import com.example.streaks.Notification.EXTRA_STREAK_ID
+import com.example.streaks.Notification.NotificationChannels
+import com.example.streaks.R
 import com.example.streaks.View.NotificationScreens.NotificationScreen
 import com.example.streaks.View.SettingsScreens.SettingsScreen
-import com.example.streaks.View.SettingsScreens.ThemeMode
-import com.example.streaks.ViewModel.NotificationViewModel
 import com.example.streaks.ViewModel.StreakViewModel
-import com.example.streaks.ui.theme.StreaksTheme
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.example.streaks.ui.theme.StreaksAppTheme
+import com.example.streaks.ui.theme.readableAccent
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.time.LocalTime
-import android.Manifest
-import android.app.AlarmManager
-import android.content.Context
-import android.net.Uri
-import android.provider.Settings
-
-const val CHANNEL = "CHANNEL"
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @AndroidEntryPoint
 class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION) // system default notification sound
-            val attributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                .build()
-
-            val channel = NotificationChannel(
-                CHANNEL,
-                "Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Streak reminders"
-                enableLights(true)
-                enableVibration(true)
-                setSound(soundUri, attributes) // ✅ system default notification sound
-            }
-
-            val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        NotificationChannels.ensure(this)
+        intent.getIntExtra(EXTRA_STREAK_ID, -1).takeIf { it > 0 }?.let { id ->
+            val destination = if (intent.getBooleanExtra(EXTRA_OPEN_URGE_PLAN, false)) UrgePlanActivity::class.java else StreakDetailsActivity::class.java
+            startActivity(Intent(this, destination).putExtra(EXTRA_STREAK_ID, id))
+            intent.removeExtra(EXTRA_STREAK_ID)
         }
         setContent {
-            permissionRequester()
-
             val viewModel: StreakViewModel = hiltViewModel()
-            val themeMode by viewModel.themeMode.collectAsState()
-
-            val isDarkTheme = when (themeMode) {
-                ThemeMode.DARK -> true
-                ThemeMode.LIGHT -> false
-                ThemeMode.SYSTEM -> isSystemInDarkTheme()
-            }
-
-            val systemUiController = rememberSystemUiController()
-            systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = !isDarkTheme)
-
-            StreaksTheme(darkTheme = isDarkTheme) {
-                scaffoldScreen()
-
-            }
-
-
-
-
-        }
-
-    }
-}
-@Composable
-fun permissionRequester() {
-    val context = LocalContext.current
-
-    val permissions = mutableListOf<String>()
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { result ->
-        result.forEach { (permission, granted) ->
-            if (!granted) {
-                Toast.makeText(context, "$permission denied", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // Launch runtime permissions once
-    LaunchedEffect(Unit) {
-        if (permissions.isNotEmpty()) {
-            launcher.launch(permissions.toTypedArray())
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val canScheduleExactAlarms = alarmManager.canScheduleExactAlarms()
-
-            if (!canScheduleExactAlarms) {
-                // Redirect user to system settings to grant exact alarm access
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                }
-                context.startActivity(intent)
-            }
+            StreaksAppTheme(viewModel) { HomeScaffold(viewModel) }
         }
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun scaffoldScreen(
-    viewModel: StreakViewModel = hiltViewModel()
-) {
-
-
-    rememberNavController()
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
-    val coroutineScope = rememberCoroutineScope()
-
-    val selectedStreaks by viewModel.selectedStreaks.collectAsState()
-
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-
-
-    val userName = "Sj"
-    var greetings by remember { mutableStateOf("") }
+private fun HomeScaffold(viewModel: StreakViewModel) {
+    var tab by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-
-    val intent : Intent = Intent(context, HomeScreenActivity::class.java)
-    val openPage = intent?.getIntExtra("OPEN_PAGE_INDEX", 0) ?: 0
-
-    val notificationViewModel : NotificationViewModel = hiltViewModel()
-    // Real-time greeting update
-    LaunchedEffect(Unit) {
-        while (true) {
-            val timeNow = LocalTime.now().hour
-            greetings = when (timeNow) {
-                in 0..11 -> "Good Morning"
-                in 12..16 -> "Good Afternoon"
-                in 17..23 -> "Good Evening"
-                else -> "Hello"
-            }
-            delay(60 * 1000)
-        }
-    }
-
-    //Scroll to Notification page
-    LaunchedEffect(Unit) {
-        pagerState.scrollToPage(openPage)
-    }
-
-    // Delete confirmation dialog
-    if (showDeleteDialog) {
-        val deleteMessage = if (selectedStreaks.size == 1) {
-            "Are you sure you want to delete this streak?"
-        } else {
-            "Are you sure you want to delete ${selectedStreaks.size} streaks?"
-        }
-
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Confirm Deletion") },
-            text = { Text(deleteMessage) },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteSelected()
-                    showDeleteDialog = false
-                }) {
-                    Text("Delete", color = Color.Red)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-
-
+    val titles = listOf(R.string.home_title, R.string.reminders_title, R.string.settings_title)
     Scaffold(
-        topBar = {
-            when (pagerState.currentPage) {
-                0 -> {
-                    if (selectedStreaks.isNotEmpty()) {
-                        TopAppBar(
-                            title = { Text("${selectedStreaks.size} selected") },
-                            actions = {
-                                IconButton(onClick = { showDeleteDialog = true }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                                }
-                                IconButton(onClick = { viewModel.clearSelection() }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Cancel")
-                                }
-                            }
-                        )
-                    }
-                    else {
-                        Surface(
-                            modifier = Modifier
-                                .statusBarsPadding()
-                                .fillMaxWidth(),
-                            color = Color.Transparent,
-                            tonalElevation = 15.dp
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(15.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "$greetings, $userName",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                IconButton(onClick = {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(2)
-                                    }
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = "Settings" ,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                1 -> {
-                    Surface(
-                        modifier = Modifier
-                            .statusBarsPadding()
-                            .fillMaxWidth(),
-                        color = Color.Transparent,
-                        tonalElevation = 15.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(15.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Notification",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                2 -> {
-                    Surface(
-                        modifier = Modifier
-                            .statusBarsPadding()
-                            .fillMaxWidth(),
-                        color = Color.Transparent,
-                        tonalElevation = 15.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(15.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Settings",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-        },
-
+        topBar = { TopAppBar(title = { Text(stringResource(titles[tab]), fontWeight = FontWeight.SemiBold) }) },
         floatingActionButton = {
-            if (selectedStreaks.isEmpty()) {
-                when (pagerState.currentPage) {
-                    0 -> {
-                        FloatingActionButton(
-                            onClick = {
-                                context.startActivity(
-                                    Intent(context, CreateStreakActivity::class.java)
-                                )
-                            },
-                            containerColor = Color.Blue,
-                            contentColor = Color.White,
-                            shape = CircleShape,
-                            modifier = Modifier.padding(end = 15.dp)
-                        ) {
-                            Icon(Icons.Default.Add, "Add streak")
-                        }
-                    }
-
-                    1 ->{
-                        FloatingActionButton(
-                            onClick = {
-                                notificationViewModel.clearAll()
-                            },
-                            containerColor = Color(0xFF4CAF50),
-                            contentColor = Color.White,
-                            shape = CircleShape,
-                            modifier = Modifier.padding(end = 15.dp)
-                        ) {
-                            Icon(Icons.Default.Check, "Check")
-                        }
-                    }
-                }
-            }
+            if (tab == 0) ExtendedFloatingActionButton(
+                onClick = { context.startActivity(Intent(context, CreateStreakActivity::class.java)) },
+                icon = { Icon(Icons.Default.Add, null) }, text = { Text(stringResource(R.string.new_goal)) }
+            )
         },
-
         bottomBar = {
-            BottomNavigationBar(
-                pagerState = pagerState,
-                onTabSelected = { index ->
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(index)
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-        ) { page ->
-            when (page) {
-                0 -> HomeScreen(paddingValues , viewModel)
-                1 -> NotificationScreen(paddingValues)
-                2 -> SettingsScreen(paddingValues)
+            NavigationBar {
+                NavigationBarItem(tab == 0, { tab = 0 }, { Icon(Icons.Default.Home, stringResource(R.string.home_title)) }, label = { BottomLabel(stringResource(R.string.home_title)) })
+                NavigationBarItem(tab == 1, { tab = 1 }, { Icon(Icons.Default.Notifications, stringResource(R.string.reminders_title)) }, label = { BottomLabel(stringResource(R.string.reminders_title)) })
+                NavigationBarItem(tab == 2, { tab = 2 }, { Icon(Icons.Default.Settings, stringResource(R.string.settings_title)) }, label = { BottomLabel(stringResource(R.string.settings_title)) })
             }
         }
-
-    } }
-
-
-@Composable
-fun HomeScreen(
-    paddingValues: PaddingValues,
-    viewModel: StreakViewModel
-) {
-    val streaks by viewModel.streaks.collectAsState()
-    val selectedStreaks by viewModel.selectedStreaks.collectAsState()
-
-    if (streaks.isEmpty()) {
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "No Streak created yet!",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Blue
-            )
-        }
-    }
-    else {
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            LazyColumn {
-                items(streaks) { streak ->
-                    Streaks(
-                        streak = streak,
-                        viewModel = viewModel,
-                        isSelected = selectedStreaks.contains(streak.streakId),
-                        inSelectionMode = selectedStreaks.isNotEmpty()
-                    )
-                }
-            }
+    ) { padding ->
+        when (tab) {
+            0 -> GoalsScreen(padding, viewModel)
+            1 -> NotificationScreen(padding, viewModel)
+            else -> SettingsScreen(padding, viewModel)
         }
     }
 }
 
 @Composable
-fun Streaks(
-    streak: StreakModel,
-    viewModel: StreakViewModel,
-    isSelected: Boolean,
-    inSelectionMode: Boolean
-) {
+private fun BottomLabel(label: String) = Text(label, maxLines = 1, fontSize = 10.sp)
+
+@Composable
+private fun GoalsScreen(padding: PaddingValues, viewModel: StreakViewModel) {
+    val goals by viewModel.streaks.collectAsState()
+    val appAccent by viewModel.appAccent.collectAsState()
     val context = LocalContext.current
-    val streakColor = Color(streak.streakColor.toULong())
-
-    // Gradient for border
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(
-            streakColor.copy(alpha = 0.9f),
-            streakColor.copy(alpha = 0.4f),
-            streakColor.copy(alpha = 0.9f)
-        ),
-        start = Offset(0f, 0f),
-        end = Offset(500f, 500f) // diagonal gradient
-    )
-
-    Surface(
-        color = if (isSelected) streakColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.background,
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 4.dp,
-        border = BorderStroke(
-            width = 2.dp,
-            brush = gradientBrush
-        ),
-        tonalElevation = 8.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 10.dp)
-            .combinedClickable(
-                onClick = {
-                    if (inSelectionMode) {
-                        viewModel.toggleSelection(streak.streakId)
-                    } else {
-                        context.startActivity(
-                            Intent(context, StreakDetailsActivity::class.java).apply {
-                                putExtra("streakId", streak.streakId)
-                            }
-                        )
-                    }
-                },
-                onLongClick = {
-                    viewModel.toggleSelection(streak.streakId)
-                }
-            )
+    if (goals.isEmpty()) {
+        Column(Modifier.fillMaxSize().padding(padding).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(8.dp)); Text(stringResource(R.string.empty_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+    LazyColumn(
+        Modifier.fillMaxSize().padding(padding),
+        contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 112.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        streak.streakName,
-                        modifier = Modifier.padding(bottom = 12.dp),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp,
-                        color = streakColor
-                    )
+        items(goals, key = { it.streakId }) { goal ->
+            GoalCard(
+                goal, if (goal.usesAppAccent) Color(appAccent.toULong()) else Color(goal.streakColor.toULong()),
+                onOpen = { context.startActivity(Intent(context, StreakDetailsActivity::class.java).putExtra(EXTRA_STREAK_ID, goal.streakId)) },
+                onUrge = { context.startActivity(Intent(context, UrgePlanActivity::class.java).putExtra(EXTRA_STREAK_ID, goal.streakId)) }
+            )
+        }
+    }
+}
 
-                    Text(
-                        viewModel.nextCount(streak),
-                        modifier = Modifier.padding(bottom = 12.dp),
-                        fontSize = 15.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(55.dp)
-                        .clip(CircleShape)
-                        .border(
-                            width = 3.dp,
-                            brush = gradientBrush, // 👈 Gradient border for circle too
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        viewModel.calculateStreakCount(streak).toString(),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = streakColor
-                    )
-                }
+@Composable
+private fun GoalCard(goal: StreakModel, accent: Color, onOpen: () -> Unit, onUrge: () -> Unit) {
+    val actionAccent = readableAccent(accent, MaterialTheme.colorScheme.background.luminance() < .5f)
+    val archived = goal.archivedAtMillis != null
+    val days = currentDurationValue(goal, System.currentTimeMillis()).millis / 86_400_000
+    val zone = ZoneId.systemDefault()
+    val formatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+    val since = goal.currentAttemptStartedAtMillis.takeIf { it > 0 }?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() } ?: goal.startDate
+    val end = goal.archivedAtMillis?.takeIf { it > 0 }?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() } ?: goal.endDate
+    Card(
+        modifier = Modifier.fillMaxWidth().semantics { role = Role.Button; contentDescription = "${goal.streakName}, $days days" }.clickable(onClick = onOpen),
+        shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.size(10.dp).background(accent, CircleShape))
+                Text(goal.streakName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                if (archived) Text(stringResource(R.string.archived), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(pluralStringResource(R.plurals.streak_days, days.toInt(), days), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+            Text(
+                if (archived && end != null) "Ended ${end.format(formatter)}" else "Since ${since.format(formatter)}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (!archived) TextButton(onClick = onUrge, modifier = Modifier.align(Alignment.End).semantics { contentDescription = "Open ${goal.streakName} urge plan" }) {
+                Text(stringResource(R.string.urge_plan_action), color = actionAccent)
             }
         }
     }
 }
-
-
-
-@Composable
-fun BottomNavigationBar(
-    pagerState: PagerState,
-    onTabSelected: (Int) -> Unit
-) {
-    val items = listOf("Home", "Notifications", "Settings")
-    val icons = listOf(
-        Icons.Default.Home,
-        Icons.Default.Notifications,
-        Icons.Default.Settings
-    )
-
-    NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
-        items.forEachIndexed { index, label ->
-            NavigationBarItem(
-                selected = pagerState.currentPage == index,
-                onClick = { onTabSelected(index) },
-                icon = {
-                        Icon(icons[index] as ImageVector, contentDescription = label)
-                },
-                label = { Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-    }
-}
-
-
-
-
-
-
-
-
-

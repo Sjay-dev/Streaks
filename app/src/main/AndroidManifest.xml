@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -11,7 +10,7 @@
 
     <application
         android:name=".ViewModel.MyApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -24,6 +23,15 @@
             android:name=".View.HomeScreens.EditStreakActivity"
             android:exported="false" />
         <activity
+            android:name=".View.HomeScreens.UrgePlanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".View.HomeScreens.SetbackActivity"
+            android:exported="false" />
+        <activity
+            android:name=".View.NotificationScreens.ReminderEditorActivity"
+            android:exported="false" />
+        <activity
             android:name=".View.HomeScreens.StreakDetailsActivity"
             android:exported="false" />
         <activity
@@ -31,8 +39,7 @@
             android:exported="false" />
         <activity
             android:name=".View.HomeScreens.HomeScreenActivity"
-            android:exported="true"
-            android:label="@string/app_name">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -43,18 +50,20 @@
         </activity>
         <activity
             android:name=".MainActivity"
-            android:exported="true" />
+            android:exported="false" />
 
-        <receiver android:name=".Notification.ReminderRecevier"
+        <receiver android:name=".Notification.ReminderReceiver"
             android:enabled="true"
             android:exported="false"/>
 
         <receiver android:name=".Notification.BootReceiver"
             android:enabled="true"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 

@@ -1,474 +1,112 @@
 package com.example.streaks.ViewModel
 
-import android.app.AlarmManager
-import android.app.Application
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import android.text.format.DateFormat
-import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.streaks.Model.Frequency
+import com.example.streaks.Model.AttemptModel
+import com.example.streaks.Model.SetbackResult
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.Model.ReminderSchedule
 import com.example.streaks.Model.StreakRepository
-import com.example.streaks.Notification.EXTRA_FREQUENCY
-import com.example.streaks.Notification.EXTRA_NOTIFICATION_TYPE
-import com.example.streaks.Notification.EXTRA_STREAK_NAME
-import com.example.streaks.Notification.ReminderRecevier
-import com.example.streaks.Notification.STREAK_COLOR
-import com.example.streaks.Notification.STREAK_ID
+import com.example.streaks.Notification.ReminderScheduler
 import com.example.streaks.View.SettingsScreens.SettingsDataStore
 import com.example.streaks.View.SettingsScreens.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.jvm.java
 
 @HiltViewModel
-class StreakViewModel @Inject constructor
-    (private val repository: StreakRepository,
-     private val settingsDataStore: SettingsDataStore,
-     application: Application) : AndroidViewModel(application) {
+class StreakViewModel @Inject constructor(
+    private val repository: StreakRepository,
+    private val settings: SettingsDataStore,
+    private val reminders: ReminderScheduler
+) : ViewModel() {
+    val streaks: StateFlow<List<StreakModel>> = repository.getAllStreaks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val themeMode: StateFlow<ThemeMode> = settings.themeMode
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
+    val appAccent: StateFlow<Long> = settings.appAccent
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SettingsDataStore.DEFAULT_APP_ACCENT)
+    val reminderSchedules: StateFlow<List<ReminderSchedule>> = repository.observeReminders()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val streaks: StateFlow<List<StreakModel>> = repository.getAllStreaks().stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(), emptyList()
-        )
+    fun observeStreak(id: Int): Flow<StreakModel?> = repository.observeStreak(id)
+    fun observeAttempts(id: Int): Flow<List<AttemptModel>> = repository.observeAttempts(id)
+    fun getStreakById(id: Int, callback: (StreakModel?) -> Unit) = viewModelScope.launch {
+        callback(repository.getStreakById(id))
+    }
+    fun getReminder(id: Int, callback: (ReminderSchedule?) -> Unit) = viewModelScope.launch { callback(repository.getReminder(id)) }
 
-    fun addStreak(streak: StreakModel) {
-        viewModelScope.launch {
-
-            val id = repository.insertStreak(streak)
-
-            val savedStreak = streak.copy(streakId = id)
-
-            if (savedStreak.reminderTime == null){
-
-            }
-
-            else{
-                savedStreak.reminderTime?.let { reminderTime ->
-                    val triggerAtMillis = LocalDateTime.of(LocalDate.now(), reminderTime)
-                        .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-
-
-                    scheduleAlarm(getApplication(), savedStreak, triggerAtMillis)
-                }
-
-            }
-
-
-
-        }
+    fun addStreak(streak: StreakModel, onSaved: (Int) -> Unit = {}) = viewModelScope.launch {
+        val id = repository.insertStreak(streak)
+        reminders.schedule(streak.copy(streakId = id))
+        onSaved(id)
     }
 
-    fun updateStreak(streak: StreakModel) {
-        viewModelScope.launch {
-            repository.updateStreak(streak)
-
-            streak.reminderTime?.let { reminderTime ->
-                val triggerAtMillis = LocalDateTime.of(LocalDate.now(), reminderTime)
-                    .let { if (it.isBefore(LocalDateTime.now())) it.plusDays(1) else it }
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-
-
-                scheduleAlarm(getApplication(), streak, triggerAtMillis)
-            }
-
-        }
+    fun updateStreak(streak: StreakModel, onSaved: () -> Unit = {}) = viewModelScope.launch {
+        val previous = repository.getStreakById(streak.streakId)
+        if (previous?.reminderTime != streak.reminderTime || streak.reminderTime == null) reminders.cancel(streak.streakId)
+        repository.updateStreak(streak)
+        reminders.schedule(streak)
+        onSaved()
     }
 
-    fun deleteStreak(streak: StreakModel) {
-        viewModelScope.launch {
-            repository.deleteStreak(streak)
-        }
+    fun deleteStreak(streak: StreakModel, onDeleted: () -> Unit = {}) = viewModelScope.launch {
+        reminders.cancel(streak.streakId)
+        repository.remindersForGoal(streak.streakId).forEach { reminders.cancelReminder(it.reminderId) }
+        repository.deleteStreak(streak)
+        onDeleted()
     }
 
-    fun getStreakById(id: Int, callback: (StreakModel?) -> Unit) {
-        viewModelScope.launch {
-            callback(repository.getStreakById(id))
-        }
+    fun archiveStreak(streakId: Int, onArchived: () -> Unit = {}) = viewModelScope.launch {
+        reminders.cancel(streakId)
+        repository.remindersForGoal(streakId).forEach { reminders.cancelReminder(it.reminderId) }
+        repository.archiveStreak(streakId)
+        onArchived()
     }
 
-    fun endStreak(streakId: Int) {
-        viewModelScope.launch {
-            repository.endStreak(streakId)
-        }
+    fun recordSetback(streakId: Int, atMillis: Long, note: String, onComplete: (SetbackResult?) -> Unit) =
+        viewModelScope.launch { onComplete(repository.recordSetback(streakId, atMillis, note)) }
+
+    fun undoSetback(result: SetbackResult, onComplete: (Boolean) -> Unit = {}) = viewModelScope.launch {
+        onComplete(repository.undoSetback(result))
     }
 
-    val themeMode: StateFlow<ThemeMode> = settingsDataStore.themeMode
-        .stateIn(viewModelScope, SharingStarted.Lazily, ThemeMode.SYSTEM)
-
-    fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch {
-            settingsDataStore.setThemeMode(mode)
-        }
+    fun recordUrge(streakId: Int, trigger: String, whatHelped: String) = viewModelScope.launch {
+        if (trigger.isNotBlank() || whatHelped.isNotBlank()) repository.recordUrge(streakId, trigger, whatHelped)
     }
 
-    // === Calculations ===
+    fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settings.setThemeMode(mode) }
+    fun setAppAccent(color: Long) = viewModelScope.launch { settings.setAppAccent(color) }
 
-    fun nextCount(streak: StreakModel, now: LocalDateTime = LocalDateTime.now()): String {
-        val start = streak.startDate.atStartOfDay()
-        val end = streak.endDate?.atTime(23, 59, 59)
-
-        if (end != null && now.isAfter(end)) return "Streak ended"
-
-        fun pluralize(value: Long, unit: String) =
-            "$value $unit" + if (value != 1L) "s" else ""
-
-        return when (streak.frequency) {
-            Frequency.DAILY -> {
-                val endOfToday = now.toLocalDate().atTime(23, 59, 59)
-                val totalMinutes = ChronoUnit.MINUTES.between(now, endOfToday)
-                val hoursLeft = totalMinutes / 60
-                val minutesLeft = totalMinutes % 60
-                "${pluralize(hoursLeft, "hour")} ${pluralize(minutesLeft, "min")} left in today’s streak"
-            }
-            Frequency.WEEKLY -> {
-                val daysSinceStart = ChronoUnit.DAYS.between(start, now)
-                val daysIntoWeek = daysSinceStart % 7
-                val daysLeft = 7 - daysIntoWeek
-                "${pluralize(daysLeft, "day")} left in this weekly streak"
-            }
-            Frequency.MONTHLY -> {
-                val monthsSinceStart = ChronoUnit.MONTHS.between(start, now)
-                val currentMonthStart = streak.startDate.plusMonths(monthsSinceStart).atStartOfDay()
-                val nextMonthStart = currentMonthStart.plusMonths(1)
-                val daysLeft = ChronoUnit.DAYS.between(now, nextMonthStart)
-                val weeks = daysLeft / 7
-                val extraDays = daysLeft % 7
-                "${pluralize(weeks, "week")} ${pluralize(extraDays, "day")} left in this monthly streak"
-            }
+    fun saveReminder(reminder: ReminderSchedule, onSaved: (Int) -> Unit = {}) = viewModelScope.launch {
+        val id = if (reminder.reminderId == 0) repository.saveReminder(reminder) else {
+            reminders.cancelReminder(reminder.reminderId)
+            repository.updateReminder(reminder)
+            reminder.reminderId
         }
+        reminders.schedule(reminder.copy(reminderId = id))
+        onSaved(id)
     }
 
-    fun calculateStreakCount(
-        streak: StreakModel,
-        now: LocalDate = LocalDate.now()
-    ): Int {
-        if (now.isBefore(streak.startDate)) return 0
-
-        val end = streak.endDate
-        return when {
-            //  If endDate exists and streak has already ended → cap at endDate
-            end != null && now.isAfter(end) -> {
-                when (streak.frequency) {
-                    Frequency.DAILY -> ChronoUnit.DAYS.between(streak.startDate, end).toInt()
-                    Frequency.WEEKLY -> ChronoUnit.WEEKS.between(streak.startDate, end).toInt()
-                    Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, end).toInt()
-                }
-            }
-
-            // ✅ If endDate is null → keep counting up to "now"
-            else -> {
-                when (streak.frequency) {
-                    Frequency.DAILY -> ChronoUnit.DAYS.between(streak.startDate, now).toInt()
-                    Frequency.WEEKLY -> ChronoUnit.WEEKS.between(streak.startDate, now).toInt()
-                    Frequency.MONTHLY -> ChronoUnit.MONTHS.between(streak.startDate, now).toInt()
-                }
-            }
-        }
+    fun setReminderEnabled(reminder: ReminderSchedule, enabled: Boolean) = viewModelScope.launch {
+        val updated = reminder.copy(enabled = enabled)
+        repository.updateReminder(updated)
+        if (enabled) reminders.schedule(updated) else reminders.cancelReminder(reminder.reminderId)
     }
 
-
-                                // === CLICKS ===
-    private val _selectedStreaks = MutableStateFlow<Set<Int>>(emptySet())
-    val selectedStreaks: StateFlow<Set<Int>> = _selectedStreaks
-
-    fun toggleSelection(streakId: Int) {
-        _selectedStreaks.value =
-            if (_selectedStreaks.value.contains(streakId)) {
-                _selectedStreaks.value - streakId
-            } else {
-                _selectedStreaks.value + streakId
-            }
+    fun deleteReminder(reminder: ReminderSchedule) = viewModelScope.launch {
+        reminders.cancelReminder(reminder.reminderId)
+        repository.deleteReminder(reminder)
     }
 
-    fun clearSelection() {
-        _selectedStreaks.value = emptySet()
+    fun deleteAllPrivateData(onComplete: () -> Unit = {}) = viewModelScope.launch {
+        reminders.cancelAll(streaks.value)
+        reminderSchedules.value.forEach { reminders.cancelReminder(it.reminderId) }
+        repository.clearAll()
+        onComplete()
     }
-
-    fun deleteSelected() {
-        viewModelScope.launch {
-            _selectedStreaks.value.forEach { id ->
-                getStreakById(id) { streak ->
-                    streak?.let { deleteStreak(it)
-                    cancelAlarm(it.streakId , getApplication())
-                    }
-                }
-            }
-            clearSelection()
-        }
-    }
-
-
-
-
-
-    // ========================= CUSTOM TIME PICKER =========================
-    @Composable
-    fun CustomTimePicker(
-        initialHour: Int,
-        initialMinute: Int,
-        streakColor : Color,
-        onCancel: () -> Unit,
-        onSave: (Int, Int) -> Unit
-    ) {
-        val context = LocalContext.current
-        val is24Hour = DateFormat.is24HourFormat(context)
-
-        var selectedHour by remember { mutableStateOf(initialHour) }
-        var selectedMinute by remember { mutableStateOf(initialMinute) }
-        var isAm by remember { mutableStateOf(initialHour < 12) }
-        val hours = if (is24Hour) (0..23).toList() else (1..12).toList()
-        val minutes = (0..59).toList()
-        val today = LocalDate.now()
-        val formattedDate = today.format(DateTimeFormatter.ofPattern("EEE, dd MMM"))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(16.dp))
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "Select Time",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = streakColor
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                LoopingNumberPicker(streakColor, hours, initialHour) { selectedHour = it }
-
-                Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = streakColor)
-
-                LoopingNumberPicker(streakColor , minutes, initialMinute) { selectedMinute = it }
-
-                if (!is24Hour) {
-                    Column(
-                        modifier = Modifier.padding(start = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        TextButton(onClick = { isAm = true }) {
-                            Text(
-                                "AM",
-                                fontWeight = if (isAm) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isAm) streakColor else Color.Gray
-                            )
-                        }
-                        TextButton(onClick = { isAm = false }) {
-                            Text(
-                                "PM",
-                                fontWeight = if (!isAm) FontWeight.Bold else FontWeight.Normal,
-                                color = if (!isAm) streakColor else Color.Gray
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-            Text("Today - $formattedDate", color = Color.Gray, fontSize = 14.sp)
-
-            Spacer(Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                TextButton(onClick = { onCancel() }) {
-                    Text("Cancel", fontSize = 16.sp , color = streakColor)
-                }
-                Button(
-                    onClick = {
-                        val finalHour =
-                            if (is24Hour) selectedHour
-                            else if (isAm) selectedHour % 12
-                            else (selectedHour % 12) + 12
-                        onSave(finalHour, selectedMinute)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = streakColor)
-                ) {
-                    Text("Save", fontSize = 16.sp, color = if (streakColor == Color.White) Color.Black else Color.White)
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun LoopingNumberPicker(
-        streakColor: Color,
-        items: List<Int>,
-        initialValue: Int,
-        onValueChange: (Int) -> Unit
-    ) {
-        val repeatedItems = List(1000) { index -> items[index % items.size] }
-        val middleIndex = repeatedItems.size / 2
-
-        val initialIndex = remember(initialValue) {
-            val safeValue = if (initialValue in items) initialValue else items.first()
-            val offset = items.indexOf(safeValue)
-            if (offset >= 0) middleIndex - (middleIndex % items.size) + offset else middleIndex
-        }
-
-        val state = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
-        val flingBehavior = rememberSnapFlingBehavior(lazyListState = state)
-
-        Box(
-            modifier = Modifier
-                .height(140.dp)
-                .width(80.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            LazyColumn(
-                state = state,
-                flingBehavior = flingBehavior,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                items(repeatedItems.size) { index ->
-                    val value = repeatedItems[index]
-                    val isSelected =
-                        state.firstVisibleItemIndex + (state.layoutInfo.visibleItemsInfo.size / 2) == index
-
-                    Text(
-                        text = String.format("%02d", value),
-                        fontSize = if (isSelected) 36.sp else 20.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected)  streakColor else Color.Gray,
-                        modifier = Modifier.padding(vertical = 6.dp)
-                    )
-                }
-            }
-        }
-
-        LaunchedEffect(state.isScrollInProgress) {
-            if (!state.isScrollInProgress) {
-                val centerIndex =
-                    state.firstVisibleItemIndex + (state.layoutInfo.visibleItemsInfo.size / 2)
-                val actualValue = repeatedItems.getOrNull(centerIndex)
-                if (actualValue != null) {
-                    onValueChange(actualValue)
-                }
-            }
-        }
-    }
-
-    // ========================= REMINDER SCHEDULE LOGIC =========================
-
-    fun scheduleAlarm(context: Context, streak: StreakModel, triggerAtMillis: Long) {
-
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        val intent = Intent(context, ReminderRecevier::class.java).apply {
-            putExtra(EXTRA_STREAK_NAME, streak.streakName)
-            putExtra(EXTRA_FREQUENCY, streak.frequency.name)
-            putExtra(EXTRA_NOTIFICATION_TYPE, streak.notificationType.name)
-            putExtra(STREAK_ID, streak.streakId)
-            putExtra(STREAK_COLOR , streak.streakColor)
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            streak.streakId,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-                } else {
-                    val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(settingsIntent)
-                    Toast.makeText(context, "Please allow exact alarms in settings.", Toast.LENGTH_LONG).show()
-                }
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-            }
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-            Toast.makeText(context, "Failed to schedule alarm: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    fun cancelAlarm(streakId: Int , context: Context) {
-        val intent = Intent(context, ReminderRecevier::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            streakId,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel() // cleanup
-    }
-
 }

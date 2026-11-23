@@ -1,3 +1,126 @@
 <resources>
-    <string name="app_name">Streak</string>
+    <string name="app_name">Streaks</string>
+    <string name="home_title">Home</string>
+    <string name="reminders_title">Reminders</string>
+    <string name="settings_title">Settings</string>
+    <string name="new_goal">New goal</string>
+    <string name="current_streak">Current streak</string>
+    <string name="urge_plan_action">Urge plan</string>
+    <plurals name="streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="empty_title">A fresh start can begin here.</string>
+    <string name="empty_body">Create a private goal when you’re ready.</string>
+    <string name="archived">Archived</string>
+    <string name="create_goal">Create goal</string>
+    <string name="edit_goal">Edit goal</string>
+    <string name="details_title">Goal details</string>
+    <string name="back">Back</string>
+    <string name="edit">Edit</string>
+    <string name="save_goal">Save goal</string>
+    <string name="saving">Saving…</string>
+    <string name="goal_basics">Your goal</string>
+    <string name="goal_name">Name</string>
+    <string name="goal_name_hint">Use any discreet name that feels right.</string>
+    <string name="start_time">Started</string>
+    <string name="change_date">Change date</string>
+    <string name="change_time">Change time</string>
+    <string name="color">Color</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_green">Green</string>
+    <string name="color_red">Red</string>
+    <string name="color_yellow">Yellow</string>
+    <string name="color_white">White</string>
+    <string name="color_black">Black</string>
+    <string name="color_purple">Purple</string>
+    <string name="personal_plan">Personal plan</string>
+    <string name="why_optional">Why I’m quitting (optional)</string>
+    <string name="urge_action_optional">What I’ll do when an urge hits (optional)</string>
+    <string name="urge_action_hint">This will be shown immediately when you ask for help.</string>
+    <string name="name_required">Add a name for this goal.</string>
+    <string name="start_future_error">The start time cannot be in the future.</string>
+
+    <string name="elapsed_compact">%1$dd  %2$02dh  %3$02dm  %4$02ds</string>
+    <plurals name="elapsed_date_only">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="best_date_only">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="attempt_date_only_duration">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="date_only_attempt_range">%1$s (date only) – %2$s</string>
+    <string name="current_time">Current time</string>
+    <string name="personal_best">Personal best</string>
+    <string name="my_reason">My reason</string>
+    <string name="my_urge_plan">My urge plan</string>
+    <string name="attempt_history">Attempt history</string>
+    <string name="current_attempt">Your current attempt continues above.</string>
+    <string name="no_previous_attempts">No previous attempts. This beginning is yours.</string>
+    <string name="previous_attempt_number">Previous attempt %1$d</string>
+
+    <string name="urge_button">I’m having an urge</string>
+    <string name="urge_title">Take one helpful step</string>
+    <string name="default_urge_action">Put my phone down and change rooms.</string>
+    <string name="urge_reassurance">Opening this plan never changes your streak.</string>
+    <string name="optional_reflection">Optional reflection</string>
+    <string name="add_reflection">Add a reflection</string>
+    <string name="trigger_optional">What triggered this? (optional)</string>
+    <string name="what_helped_optional">What helped? (optional)</string>
+    <string name="done">Done</string>
+    <string name="close">Close</string>
+
+    <string name="setback_button">Record a setback</string>
+    <string name="setback_title">Record a setback</string>
+    <string name="setback_explanation">Saving keeps this attempt in your history and begins the next one at the time you choose. You can undo immediately afterward.</string>
+    <string name="note_optional">Note (optional)</string>
+    <string name="setback_future_error">Choose a time that has already passed.</string>
+    <string name="setback_before_start_error">Choose a time after this attempt began.</string>
+    <string name="save_and_begin_again">Save and begin again</string>
+    <plurals name="setback_saved">
+        <item quantity="one">Your previous %1$d day is saved. Ready to begin again?</item>
+        <item quantity="other">Your previous %1$d days are saved. Ready to begin again?</item>
+    </plurals>
+    <string name="undo">Undo</string>
+
+    <string name="archive_goal">End / archive this goal</string>
+    <string name="archive_title">Archive this goal?</string>
+    <string name="archive_explanation">This stops the timer and its reminder. It will not be recorded as a setback.</string>
+    <string name="archive_action">Archive goal</string>
+    <string name="delete_goal">Delete this goal and its history</string>
+    <string name="delete_goal_title">Delete this goal?</string>
+    <string name="delete_goal_explanation">Its attempts, private plan, and pending reminder will be permanently removed.</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="reminder">Reminder</string>
+    <string name="evening_reminder">Daily reminder</string>
+    <string name="reminder_at">Remind me at %1$s</string>
+    <string name="reminder_privacy">The preview stays neutral and never includes this goal’s name or notes.</string>
+    <string name="sound_default">Sound</string>
+    <string name="sound_silent">Silent</string>
+    <string name="permission_note">If notification permission is declined, the rest of Streaks still works normally.</string>
+    <string name="reminder_title">A moment for yourself</string>
+    <string name="reminder_text">Open your plan when you’re ready.</string>
+    <string name="reminder_channel_name">Private reminders</string>
+    <string name="reminder_channel_description">Neutral reminders from Streaks</string>
+    <string name="no_reminders_yet">No reminder history yet</string>
+    <string name="no_reminders_body">Reminders you receive will appear here without private goal details.</string>
+    <string name="clear_history">Clear reminder history</string>
+
+    <string name="appearance">Appearance</string>
+    <string name="system_theme">System default</string>
+    <string name="light_theme">Light</string>
+    <string name="dark_theme">Dark</string>
+    <string name="privacy">Privacy</string>
+    <string name="privacy_summary">Streaks works offline, has no internet permission, and excludes its private data from Android backup.</string>
+    <string name="delete_private_data">Delete all private data</string>
+    <string name="delete_all_title">Delete everything in Streaks?</string>
+    <string name="delete_all_explanation">All goals, attempts, urge reflections, reminder history, and pending reminders will be permanently removed.</string>
+    <string name="delete_everything">Delete everything</string>
 </resources>
