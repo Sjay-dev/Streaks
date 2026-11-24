@@ -1,6 +1,7 @@
 package com.example.streaks.View.NotificationScreens
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
@@ -14,13 +15,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -63,10 +68,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.streaks.Model.ReminderDestination
 import com.example.streaks.Model.ReminderSchedule
 import com.example.streaks.Model.ReminderSound
+import com.example.streaks.Model.eligibleReminderGoals
 import com.example.streaks.Notification.EXTRA_REMINDER_ID
 import com.example.streaks.Notification.NotificationChannels
 import com.example.streaks.R
 import com.example.streaks.View.Components.InlineTimeWheel
+import com.example.streaks.View.HomeScreens.ArchiveActivity
+import com.example.streaks.View.HomeScreens.CreateStreakActivity
+import com.example.streaks.View.HomeScreens.EXTRA_CREATED_STREAK_ID
+import com.example.streaks.ViewModel.StreakLoadState
 import com.example.streaks.ViewModel.StreakViewModel
 import com.example.streaks.ui.theme.StreaksAppTheme
 import com.example.streaks.ui.theme.onAccent
@@ -88,19 +98,142 @@ class ReminderEditorActivity : ComponentActivity() {
 @Composable
 private fun ReminderEditor(reminderId: Int, vm: StreakViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
-    val goals by vm.streaks.collectAsState()
+    val loadState by vm.streakLoadState.collectAsState()
+    val goals = (loadState as? StreakLoadState.Loaded)?.streaks.orEmpty()
+    val eligibleGoals = eligibleReminderGoals(goals)
+    val eligibleIds = eligibleGoals.map { it.streakId }
     val appAccent by vm.appAccent.collectAsState()
-    var loaded by remember { mutableStateOf(reminderId == 0) }
+    var reminderLoaded by remember(reminderId) { mutableStateOf(reminderId == 0) }
+    var reminderLoadFailed by remember(reminderId) { mutableStateOf(false) }
+    var reminderLoadGeneration by remember { mutableStateOf(0) }
     var draft by remember { mutableStateOf<ReminderSchedule?>(null) }
-    LaunchedEffect(reminderId, goals) {
-        if (reminderId > 0 && draft == null) vm.getReminder(reminderId) { draft = it; loaded = true }
-        else if (reminderId == 0 && draft == null) goals.firstOrNull { it.archivedAtMillis == null }?.let { draft = ReminderSchedule(streakId = it.streakId) }
+    var externalLaunchInProgress by remember { mutableStateOf(false) }
+    val createGoal = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        externalLaunchInProgress = false
+        val createdId = result.data?.getIntExtra(EXTRA_CREATED_STREAK_ID, -1) ?: -1
+        if (result.resultCode == Activity.RESULT_OK && createdId > 0) {
+            draft = ReminderSchedule(streakId = createdId)
+        }
     }
-    if (!loaded || (draft == null && goals.isNotEmpty())) return CircularProgressIndicator()
+    val openArchive = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        externalLaunchInProgress = false
+    }
+    LaunchedEffect(reminderId, reminderLoadGeneration) {
+        if (reminderId > 0) {
+            reminderLoaded = false
+            reminderLoadFailed = false
+            vm.getReminder(
+                reminderId,
+                callback = {
+                    draft = it
+                    reminderLoaded = true
+                    reminderLoadFailed = it == null
+                },
+                onError = {
+                    reminderLoaded = true
+                    reminderLoadFailed = true
+                }
+            )
+        }
+    }
+    LaunchedEffect(reminderId, eligibleIds) {
+        if (reminderId == 0) {
+            if (draft != null && draft?.streakId !in eligibleIds) draft = null
+            if (draft == null && eligibleGoals.size == 1) {
+                draft = ReminderSchedule(streakId = eligibleGoals.single().streakId)
+            }
+        }
+    }
+
+    if (loadState is StreakLoadState.Loading || !reminderLoaded) {
+        ReminderRouteFrame(if (reminderId == 0) "Add reminder" else "Edit reminder", onBack) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+    if (loadState is StreakLoadState.Error) {
+        ReminderRouteFrame(if (reminderId == 0) "Add reminder" else "Edit reminder", onBack) { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("Could not load streaks.", color = MaterialTheme.colorScheme.error)
+                Button(onClick = vm::retryStreakLoad, Modifier.padding(top = 12.dp)) { Text("Retry") }
+            }
+        }
+        return
+    }
+    if (reminderLoadFailed) {
+        ReminderRouteFrame("Edit reminder", onBack) { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("Could not load this reminder.", color = MaterialTheme.colorScheme.error)
+                Button(onClick = { reminderLoadGeneration++ }, Modifier.padding(top = 12.dp)) { Text("Retry") }
+            }
+        }
+        return
+    }
+
     val reminder = draft
     if (reminder == null) {
-        Scaffold(topBar = { TopAppBar(title = { Text("Add reminder") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding ->
-            Text("Create an active goal before adding a reminder.", Modifier.padding(padding).padding(24.dp))
+        if (eligibleGoals.isEmpty()) {
+            val hasArchivedGoals = goals.any { it.archivedAtMillis != null }
+            ReminderRouteFrame("Add reminder", onBack) { padding ->
+                Column(
+                    Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("No active streaks", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Create or restore a streak before adding a reminder.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)
+                    )
+                    Button(
+                        enabled = !externalLaunchInProgress,
+                        onClick = {
+                            externalLaunchInProgress = true
+                            createGoal.launch(Intent(context, CreateStreakActivity::class.java))
+                        }
+                    ) { Text("Create streak") }
+                    if (hasArchivedGoals) {
+                        OutlinedButton(
+                            enabled = !externalLaunchInProgress,
+                            onClick = {
+                                externalLaunchInProgress = true
+                                openArchive.launch(Intent(context, ArchiveActivity::class.java))
+                            },
+                            modifier = Modifier.padding(top = 10.dp)
+                        ) { Text("Open archive") }
+                    }
+                }
+            }
+        } else {
+            ReminderRouteFrame("Add reminder", onBack) { padding ->
+                LazyColumn(
+                    Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text("Choose a streak", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                        Text("Which streak should this reminder support?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    items(eligibleGoals, key = { it.streakId }) { goal ->
+                        OutlinedButton(
+                            onClick = { draft = ReminderSchedule(streakId = goal.streakId) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text(goal.streakName, Modifier.weight(1f)) }
+                    }
+                }
+            }
         }
         return
     }
@@ -143,7 +276,7 @@ private fun ReminderEditor(reminderId: Int, vm: StreakViewModel, onBack: () -> U
                 Text("Goal", style = MaterialTheme.typography.labelLarge)
                 OutlinedButton(onClick = { goalMenu = true }, Modifier.fillMaxWidth()) { Text(selectedGoal?.streakName ?: "Choose goal", Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown, null) }
                 DropdownMenu(goalMenu, { goalMenu = false }) {
-                    goals.filter { it.archivedAtMillis == null }.forEach { goal -> DropdownMenuItem({ Text(goal.streakName) }, { draft = reminder.copy(streakId = goal.streakId); goalMenu = false }) }
+                    eligibleGoals.forEach { goal -> DropdownMenuItem({ Text(goal.streakName) }, { draft = reminder.copy(streakId = goal.streakId); goalMenu = false }) }
                 }
                 Text("Time", style = MaterialTheme.typography.labelLarge)
                 TextButton(onClick = { timeExpanded = !timeExpanded }) { Text(reminder.time.format(DateTimeFormatter.ofPattern(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a")), style = MaterialTheme.typography.headlineSmall) }
@@ -174,6 +307,28 @@ private fun ReminderEditor(reminderId: Int, vm: StreakViewModel, onBack: () -> U
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReminderRouteFrame(
+    title: String,
+    onBack: () -> Unit,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(title) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                }
+            )
+        },
+        content = content
+    )
 }
 
 @Composable

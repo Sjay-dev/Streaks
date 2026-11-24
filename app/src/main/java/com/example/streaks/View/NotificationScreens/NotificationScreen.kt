@@ -68,6 +68,7 @@ fun NotificationScreen(paddingValues: PaddingValues, viewModel: StreakViewModel)
     val lifecycleOwner = LocalLifecycleOwner.current
     var showHistory by remember { mutableStateOf(false) }
     var statusRefresh by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var lastEditorLaunchAt by remember { mutableLongStateOf(0L) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) statusRefresh = System.currentTimeMillis()
@@ -76,6 +77,9 @@ fun NotificationScreen(paddingValues: PaddingValues, viewModel: StreakViewModel)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     fun open(id: Int = 0) {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastEditorLaunchAt < 750L) return
+        lastEditorLaunchAt = now
         context.startActivity(Intent(context, ReminderEditorActivity::class.java).putExtra(EXTRA_REMINDER_ID, id))
     }
     val now = statusRefresh

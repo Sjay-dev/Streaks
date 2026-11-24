@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -34,11 +35,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,6 +72,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -83,7 +88,10 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.example.streaks.Model.ArchiveAction
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.Model.archiveActionFor
+import com.example.streaks.Model.archiveTargetsFor
 import com.example.streaks.Model.currentDurationValue
 import com.example.streaks.Notification.EXTRA_OPEN_URGE_PLAN
 import com.example.streaks.Notification.EXTRA_STREAK_ID
@@ -143,11 +151,14 @@ private fun HomeScaffold(viewModel: StreakViewModel) {
     var selectedIds by remember { mutableStateOf(emptySet<Int>()) }
     var confirmation by remember { mutableStateOf<BulkConfirmation?>(null) }
     var processing by remember { mutableStateOf(false) }
+    var homeMenu by remember { mutableStateOf(false) }
     val goals by viewModel.streaks.collectAsState()
+    val activeGoals = goals.filter { it.archivedAtMillis == null }
     val displayName by viewModel.displayName.collectAsState()
     val context = LocalContext.current
     val greeting = rememberHomeGreeting(displayName)
     val selectedGoals = goals.filter { it.streakId in selectedIds }
+    val selectionAction = archiveActionFor(selectedGoals)
     val activeSelected = selectedGoals.count { it.archivedAtMillis == null }
     val archivedSelected = selectedGoals.size - activeSelected
 
@@ -179,9 +190,20 @@ private fun HomeScaffold(viewModel: StreakViewModel) {
                     enabled = !processing && (deleting || activeSelected > 0),
                     onClick = {
                         processing = true
-                        val done = { processing = false; closeSelection() }
-                        if (deleting) viewModel.deleteStreaks(selectedIds, done)
-                        else viewModel.archiveStreaks(selectedIds, done)
+                        if (deleting) {
+                            val requested = selectedIds.size
+                            viewModel.deleteStreaks(selectedIds) {
+                                processing = false
+                                closeSelection()
+                                Toast.makeText(context, "$requested streak${if (requested == 1) "" else "s"} deleted.", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            viewModel.applyArchiveAction(selectedGoals) { _, changed ->
+                                processing = false
+                                closeSelection()
+                                Toast.makeText(context, "$changed streak${if (changed == 1) "" else "s"} archived.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 ) {
                     Text(if (processing) "Working…" else if (deleting) "Delete permanently" else "Archive", color = if (deleting) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
@@ -208,11 +230,51 @@ private fun HomeScaffold(viewModel: StreakViewModel) {
                 },
                 actions = {
                     if (tab == 0 && selectionActive) {
-                        TextButton(enabled = selectedIds.isNotEmpty() && activeSelected > 0 && !processing, onClick = { confirmation = BulkConfirmation.ARCHIVE }) { Text("Archive") }
+                        if (selectionAction != null) {
+                            val actionLabel = if (selectionAction == ArchiveAction.ARCHIVE) "Archive" else "Unarchive"
+                            TextButton(
+                                enabled = archiveTargetsFor(selectedGoals, selectionAction).isNotEmpty() && !processing,
+                                onClick = {
+                                    if (selectionAction == ArchiveAction.ARCHIVE) confirmation = BulkConfirmation.ARCHIVE
+                                    else {
+                                        processing = true
+                                        viewModel.applyArchiveAction(selectedGoals) { _, changed ->
+                                            processing = false
+                                            closeSelection()
+                                            Toast.makeText(context, "$changed streak${if (changed == 1) "" else "s"} restored.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    painterResource(if (selectionAction == ArchiveAction.ARCHIVE) R.drawable.ic_archive_24 else R.drawable.ic_unarchive_24),
+                                    contentDescription = "$actionLabel selected streaks"
+                                )
+                                Text(actionLabel)
+                            }
+                        }
                         TextButton(enabled = selectedIds.isNotEmpty() && !processing, onClick = { confirmation = BulkConfirmation.DELETE }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
                         TextButton(enabled = !processing, onClick = { closeSelection() }) { Text("Close") }
-                    } else if (tab == 0 && goals.isNotEmpty()) {
-                        TextButton(onClick = { selectionActive = true }) { Text("Select") }
+                    } else if (tab == 0) {
+                        androidx.compose.material3.IconButton(onClick = { homeMenu = true }) {
+                            Icon(Icons.Default.MoreVert, "Home options")
+                        }
+                        DropdownMenu(expanded = homeMenu, onDismissRequest = { homeMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Archive") },
+                                onClick = {
+                                    homeMenu = false
+                                    context.startActivity(Intent(context, ArchiveActivity::class.java))
+                                },
+                                leadingIcon = { Icon(painterResource(R.drawable.ic_archive_24), "Open archive") }
+                            )
+                            if (activeGoals.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Select") },
+                                    onClick = { homeMenu = false; selectionActive = true }
+                                )
+                            }
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -306,7 +368,8 @@ private fun GoalsScreen(
     onSelectionChange: (Int, Boolean) -> Unit,
     onLongSelect: (Int) -> Unit
 ) {
-    val goals by viewModel.streaks.collectAsState()
+    val allGoals by viewModel.streaks.collectAsState()
+    val goals = allGoals.filter { it.archivedAtMillis == null }
     val appAccent by viewModel.appAccent.collectAsState()
     val context = LocalContext.current
     if (goals.isEmpty()) {
@@ -345,7 +408,7 @@ private fun GoalsScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GoalCard(
+internal fun GoalCard(
     goal: StreakModel,
     accent: Color,
     selected: Boolean,
@@ -387,7 +450,7 @@ private fun GoalCard(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(goal.streakName, color = actionAccent, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    if (archived && end != null) "Ended ${end.format(formatter)}" else "Since ${since.format(formatter)}",
+                    if (archived && end != null) "Archived ${end.format(formatter)}" else "Since ${since.format(formatter)}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (!archived) {

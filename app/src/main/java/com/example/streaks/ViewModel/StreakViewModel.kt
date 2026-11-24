@@ -3,18 +3,27 @@ package com.example.streaks.ViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.streaks.Model.AttemptModel
+import com.example.streaks.Model.ArchiveAction
 import com.example.streaks.Model.SetbackResult
 import com.example.streaks.Model.StreakModel
 import com.example.streaks.Model.ReminderSchedule
 import com.example.streaks.Model.StreakRepository
+import com.example.streaks.Model.archiveActionFor
+import com.example.streaks.Model.archiveTargetsFor
 import com.example.streaks.Notification.ReminderScheduler
 import com.example.streaks.View.SettingsScreens.SettingsDataStore
 import com.example.streaks.View.SettingsScreens.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,8 +33,18 @@ class StreakViewModel @Inject constructor(
     private val settings: SettingsDataStore,
     private val reminders: ReminderScheduler
 ) : ViewModel() {
-    val streaks: StateFlow<List<StreakModel>> = repository.getAllStreaks()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val streakLoadGeneration = MutableStateFlow(0)
+    val streakLoadState: StateFlow<StreakLoadState> = streakLoadGeneration
+        .flatMapLatest {
+            repository.getAllStreaks()
+                .map<List<StreakModel>, StreakLoadState>(StreakLoadState::Loaded)
+                .onStart { emit(StreakLoadState.Loading) }
+                .catch { emit(StreakLoadState.Error) }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, StreakLoadState.Loading)
+    val streaks: StateFlow<List<StreakModel>> = streakLoadState
+        .map { (it as? StreakLoadState.Loaded)?.streaks.orEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
     val appAccent: StateFlow<Long> = settings.appAccent
@@ -40,7 +59,17 @@ class StreakViewModel @Inject constructor(
     fun getStreakById(id: Int, callback: (StreakModel?) -> Unit) = viewModelScope.launch {
         callback(repository.getStreakById(id))
     }
-    fun getReminder(id: Int, callback: (ReminderSchedule?) -> Unit) = viewModelScope.launch { callback(repository.getReminder(id)) }
+    fun getReminder(
+        id: Int,
+        callback: (ReminderSchedule?) -> Unit,
+        onError: () -> Unit = {}
+    ) = viewModelScope.launch {
+        try {
+            callback(repository.getReminder(id))
+        } catch (_: Exception) {
+            onError()
+        }
+    }
 
     fun addStreak(streak: StreakModel, onSaved: (Int) -> Unit = {}) = viewModelScope.launch {
         val id = repository.insertStreak(streak)
@@ -63,21 +92,38 @@ class StreakViewModel @Inject constructor(
         onDeleted()
     }
 
-    fun archiveStreak(streakId: Int, onArchived: () -> Unit = {}) = viewModelScope.launch {
+    fun retryStreakLoad() = streakLoadGeneration.update { it + 1 }
+
+    fun archiveStreak(streakId: Int, onArchived: (Int) -> Unit = {}) = viewModelScope.launch {
         reminders.cancel(streakId)
         repository.remindersForGoal(streakId).forEach { reminders.cancelReminder(it.reminderId) }
-        repository.archiveStreak(streakId)
-        onArchived()
+        onArchived(repository.archiveStreak(streakId))
     }
 
-    fun archiveStreaks(streakIds: Set<Int>, onArchived: () -> Unit = {}) = viewModelScope.launch {
+    fun archiveStreaks(streakIds: Set<Int>, onArchived: (Int) -> Unit = {}) = viewModelScope.launch {
         val reminderIds = streakIds.associateWith { repository.remindersForGoal(it).map(ReminderSchedule::reminderId) }
-        repository.archiveStreaks(streakIds)
+        val changed = repository.archiveStreaks(streakIds)
         reminderIds.forEach { (streakId, ids) ->
             reminders.cancel(streakId)
             ids.forEach(reminders::cancelReminder)
         }
-        onArchived()
+        onArchived(changed)
+    }
+
+    fun unarchiveStreaks(streakIds: Set<Int>, onUnarchived: (Int) -> Unit = {}) = viewModelScope.launch {
+        onUnarchived(repository.unarchiveStreaks(streakIds))
+    }
+
+    fun applyArchiveAction(
+        selectedStreaks: Collection<StreakModel>,
+        onComplete: (ArchiveAction, Int) -> Unit = { _, _ -> }
+    ) {
+        val action = archiveActionFor(selectedStreaks) ?: return
+        val ids = archiveTargetsFor(selectedStreaks, action)
+        when (action) {
+            ArchiveAction.ARCHIVE -> archiveStreaks(ids) { onComplete(action, it) }
+            ArchiveAction.UNARCHIVE -> unarchiveStreaks(ids) { onComplete(action, it) }
+        }
     }
 
     fun deleteStreaks(streakIds: Set<Int>, onDeleted: () -> Unit = {}) = viewModelScope.launch {
@@ -133,4 +179,10 @@ class StreakViewModel @Inject constructor(
         repository.clearAll()
         onComplete()
     }
+}
+
+sealed interface StreakLoadState {
+    data object Loading : StreakLoadState
+    data class Loaded(val streaks: List<StreakModel>) : StreakLoadState
+    data object Error : StreakLoadState
 }

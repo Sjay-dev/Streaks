@@ -29,6 +29,12 @@ interface StreakDao {
     @Query("SELECT * FROM Streaks WHERE streakId = :id")
     fun observeStreak(id: Int): Flow<StreakModel?>
 
+    @Query("UPDATE Streaks SET archivedAtMillis = :archivedAt, reminderTime = NULL WHERE streakId = :id AND archivedAtMillis IS NULL")
+    suspend fun markArchived(id: Int, archivedAt: Long): Int
+
+    @Query("UPDATE Streaks SET archivedAtMillis = NULL, endDate = NULL, currentAttemptStartedAtMillis = :newAttemptStart WHERE streakId = :id AND archivedAtMillis IS NOT NULL")
+    suspend fun markActive(id: Int, newAttemptStart: Long): Int
+
     @Query("SELECT * FROM Streaks WHERE reminderTime IS NOT NULL AND archivedAtMillis IS NULL")
     suspend fun getAllWithReminders(): List<StreakModel>
 
@@ -62,6 +68,7 @@ interface StreakDao {
     @Query("SELECT * FROM ReminderSchedules ORDER BY time") fun observeReminders(): Flow<List<ReminderSchedule>>
     @Query("SELECT * FROM ReminderSchedules WHERE reminderId = :id") suspend fun getReminder(id: Int): ReminderSchedule?
     @Query("SELECT * FROM ReminderSchedules WHERE streakId = :streakId") suspend fun remindersForGoal(streakId: Int): List<ReminderSchedule>
+    @Query("UPDATE ReminderSchedules SET enabled = 0 WHERE streakId = :streakId AND enabled = 1") suspend fun pauseRemindersForGoal(streakId: Int): Int
     @Query("SELECT * FROM ReminderSchedules WHERE enabled = 1") suspend fun enabledReminders(): List<ReminderSchedule>
     @Query("DELETE FROM ReminderSchedules WHERE streakId = :streakId") suspend fun deleteRemindersForGoal(streakId: Int)
     @Query("DELETE FROM ReminderSchedules") suspend fun clearReminders()

@@ -28,6 +28,7 @@ import java.io.File
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 @RunWith(AndroidJUnit4::class)
 class DatabaseMigrationTest {
@@ -103,11 +104,71 @@ class DatabaseMigrationTest {
         repository.archiveStreaks(setOf(activeId, archivedId), now = 9999L)
         assertEquals(9999L, repository.getStreakById(activeId)?.archivedAtMillis)
         assertEquals(originalEnd, repository.getStreakById(archivedId)?.archivedAtMillis)
-        assertTrue(repository.remindersForGoal(activeId).isEmpty())
+        assertFalse(repository.remindersForGoal(activeId).single().enabled)
 
         repository.deleteStreaks(setOf(activeId, archivedId))
         assertNull(repository.getStreakById(activeId))
         assertNull(repository.getStreakById(archivedId))
+    }
+
+    @Test fun archiveAndRestore_resumePausedDurationAndPreserveIdentityHistoryAndReminder() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(context, StreakDataBase::class.java).build().also(databases::add)
+        val repository = StreakRepository(db.streakDao(), db.notificationDao(), db)
+        val startedAt = 10_000L
+        val archivedAt = 20_000L
+        val restoredAt = 30_000L
+        val original = StreakModel(
+            streakName = "Keep everything",
+            streakColor = 42L,
+            currentAttemptStartedAtMillis = startedAt,
+            whyQuitting = "Reason",
+            urgeAction = "Plan"
+        )
+        val id = repository.insertStreak(original)
+        repository.saveReminder(ReminderSchedule(streakId = id, enabled = true))
+
+        assertEquals(1, repository.archiveStreak(id, archivedAt))
+        assertEquals(0, repository.archiveStreak(id, archivedAt + 1))
+        val archived = repository.getStreakById(id)!!
+        assertEquals(archivedAt, archived.archivedAtMillis)
+        assertEquals(archivedAt - startedAt, com.example.streaks.Model.currentDurationValue(archived, archivedAt).millis)
+        assertTrue(repository.observeAttempts(id).first().isEmpty())
+        assertFalse(repository.remindersForGoal(id).single().enabled)
+
+        assertEquals(1, repository.unarchiveStreak(id, restoredAt))
+        assertEquals(0, repository.unarchiveStreak(id, restoredAt + 1))
+        val restored = repository.getStreakById(id)!!
+        assertEquals(id, restored.streakId)
+        assertEquals(original.streakName, restored.streakName)
+        assertEquals(original.streakColor, restored.streakColor)
+        assertEquals(original.whyQuitting, restored.whyQuitting)
+        assertEquals(original.urgeAction, restored.urgeAction)
+        assertNull(restored.archivedAtMillis)
+        assertEquals(restoredAt - (archivedAt - startedAt), restored.currentAttemptStartedAtMillis)
+        assertEquals(archivedAt - startedAt, com.example.streaks.Model.currentDurationValue(restored, restoredAt).millis)
+        assertTrue(repository.observeAttempts(id).first().isEmpty())
+        assertFalse(repository.remindersForGoal(id).single().enabled)
+    }
+
+    @Test fun dateOnlyStreak_resumesAtItsArchivedDuration() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(context, StreakDataBase::class.java).build().also(databases::add)
+        val repository = StreakRepository(db.streakDao(), db.notificationDao(), db)
+        val zone = ZoneId.systemDefault()
+        val startDate = LocalDate.of(2026, 1, 1)
+        val archivedAt = LocalDate.of(2026, 1, 11).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val restoredAt = LocalDate.of(2026, 2, 1).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val id = repository.insertStreak(
+            StreakModel(streakName = "Date only", startDate = startDate, currentAttemptStartedAtMillis = 0L)
+        )
+
+        assertEquals(1, repository.archiveStreak(id, archivedAt))
+        val frozenDuration = com.example.streaks.Model.currentDurationValue(repository.getStreakById(id)!!, archivedAt).millis
+        assertEquals(Duration.ofDays(10).toMillis(), frozenDuration)
+
+        assertEquals(1, repository.unarchiveStreak(id, restoredAt))
+        val restored = repository.getStreakById(id)!!
+        assertEquals(frozenDuration, com.example.streaks.Model.currentDurationValue(restored, restoredAt).millis)
+        assertTrue(repository.observeAttempts(id).first().isEmpty())
     }
 
     @Test fun reminderHistory_hasOneRowPerScheduledOccurrence() = runBlocking {

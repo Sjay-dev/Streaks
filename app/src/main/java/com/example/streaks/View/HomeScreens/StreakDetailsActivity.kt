@@ -2,6 +2,7 @@ package com.example.streaks.View.HomeScreens
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -46,13 +47,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.streaks.Model.ArchiveAction
 import com.example.streaks.Model.AttemptModel
 import com.example.streaks.Model.StreakModel
+import com.example.streaks.Model.archiveActionFor
 import com.example.streaks.Model.attemptDurationValue
 import com.example.streaks.Model.currentDurationValue
 import com.example.streaks.Model.elapsedParts
@@ -91,6 +95,8 @@ private fun DetailsRoute(id: Int, vm: StreakViewModel, onBack: () -> Unit, open:
     var archiveConfirm by remember { mutableStateOf(false) }
     var deleteConfirm by remember { mutableStateOf(false) }
     val current = goal
+    val archiveAction = current?.let { archiveActionFor(listOf(it)) }
+    val context = LocalContext.current
     val rawAccent = Color((if (current?.usesAppAccent != false) appAccent else current.streakColor).toULong())
     val accent = readableAccent(rawAccent, MaterialTheme.colorScheme.background.luminance() < .5f)
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent(accent))) {
@@ -103,7 +109,25 @@ private fun DetailsRoute(id: Int, vm: StreakViewModel, onBack: () -> Unit, open:
                     TextButton(onClick = { open(EditStreakActivity::class.java) }) { Text(stringResource(R.string.edit)) }
                     IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "More options") }
                     DropdownMenu(menu, { menu = false }) {
-                        if (current.archivedAtMillis == null) DropdownMenuItem({ Text(stringResource(R.string.archive_action)) }, { menu = false; archiveConfirm = true })
+                        if (archiveAction != null) {
+                            val label = if (archiveAction == ArchiveAction.ARCHIVE) "Archive" else "Unarchive"
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    menu = false
+                                    if (archiveAction == ArchiveAction.ARCHIVE) archiveConfirm = true
+                                    else vm.applyArchiveAction(listOf(current)) { _, changed ->
+                                        Toast.makeText(context, "$changed streak${if (changed == 1) "" else "s"} restored.", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(if (archiveAction == ArchiveAction.ARCHIVE) R.drawable.ic_archive_24 else R.drawable.ic_unarchive_24),
+                                        contentDescription = "$label this streak"
+                                    )
+                                }
+                            )
+                        }
                         DropdownMenuItem({ Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }, { menu = false; deleteConfirm = true })
                     }
                 }
@@ -114,7 +138,12 @@ private fun DetailsRoute(id: Int, vm: StreakViewModel, onBack: () -> Unit, open:
         if (current == null) CircularProgressIndicator(Modifier.padding(padding))
         else DetailsContent(current, attempts, padding, { open(UrgePlanActivity::class.java) }, { open(SetbackActivity::class.java) })
     }
-    if (current != null && archiveConfirm) ConfirmDialog(stringResource(R.string.archive_title), stringResource(R.string.archive_explanation), stringResource(R.string.archive_action), { archiveConfirm = false }) { vm.archiveStreak(id); archiveConfirm = false }
+    if (current != null && archiveConfirm) ConfirmDialog(stringResource(R.string.archive_title), stringResource(R.string.archive_explanation), stringResource(R.string.archive_action), { archiveConfirm = false }) {
+        archiveConfirm = false
+        vm.applyArchiveAction(listOf(current)) { _, changed ->
+            Toast.makeText(context, "$changed streak${if (changed == 1) "" else "s"} archived.", Toast.LENGTH_SHORT).show()
+        }
+    }
     if (current != null && deleteConfirm) ConfirmDialog(
         stringResource(R.string.delete_goal_title),
         "${current.streakName}, its attempts, plan, and reminders will be permanently removed.",
@@ -136,7 +165,7 @@ private fun DetailsContent(goal: StreakModel, attempts: List<AttemptModel>, padd
                 Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(if (archived) stringResource(R.string.archived) else stringResource(R.string.current_streak), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(pluralStringResource(R.plurals.streak_days, current.days.toInt(), current.days), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
-                    if (archived && endDate != null) Text("Ended ${endDate.format(DateTimeFormatter.ofPattern("d MMM yyyy"))}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (archived && endDate != null) Text("Archived ${endDate.format(DateTimeFormatter.ofPattern("d MMM yyyy"))}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.personal_best), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(pluralStringResource(R.plurals.streak_days, best.days.toInt(), best.days), style = MaterialTheme.typography.titleLarge)
                 }

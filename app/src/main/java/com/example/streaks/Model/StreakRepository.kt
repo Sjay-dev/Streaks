@@ -44,22 +44,42 @@ class StreakRepository @Inject constructor(
         notificationDao.deleteForStreak(streak.streakId)
     }
 
-    suspend fun archiveStreak(streakId: Int, now: Long = System.currentTimeMillis()) {
-        database.withTransaction {
-            dao.getStreakById(streakId)?.let { dao.updateStreak(it.copy(archivedAtMillis = now, reminderTime = null)) }
-            dao.deleteRemindersForGoal(streakId)
+    suspend fun archiveStreak(streakId: Int, now: Long = System.currentTimeMillis()): Int =
+        archiveStreaks(setOf(streakId), now)
+
+    suspend fun archiveStreaks(streakIds: Set<Int>, now: Long = System.currentTimeMillis()): Int {
+        if (streakIds.isEmpty()) return 0
+        return database.withTransaction {
+            var changed = 0
+            streakIds.forEach { streakId ->
+                if (dao.getStreakById(streakId)?.takeIf { it.archivedAtMillis == null } == null) return@forEach
+                if (dao.markArchived(streakId, now) == 1) {
+                    changed++
+                    // Retain the user's schedules and history, but never let an archived
+                    // goal generate a notification. Restoration deliberately leaves them paused.
+                    dao.pauseRemindersForGoal(streakId)
+                }
+            }
+            changed
         }
     }
 
-    suspend fun archiveStreaks(streakIds: Set<Int>, now: Long = System.currentTimeMillis()) {
-        if (streakIds.isEmpty()) return
-        database.withTransaction {
+    suspend fun unarchiveStreak(streakId: Int, now: Long = System.currentTimeMillis()): Int =
+        unarchiveStreaks(setOf(streakId), now)
+
+    suspend fun unarchiveStreaks(streakIds: Set<Int>, now: Long = System.currentTimeMillis()): Int {
+        if (streakIds.isEmpty()) return 0
+        return database.withTransaction {
+            var changed = 0
             streakIds.forEach { streakId ->
-                dao.getStreakById(streakId)?.takeIf { it.archivedAtMillis == null }?.let {
-                    dao.updateStreak(it.copy(archivedAtMillis = now, reminderTime = null))
-                }
-                dao.deleteRemindersForGoal(streakId)
+                val streak = dao.getStreakById(streakId)?.takeIf { it.archivedAtMillis != null }
+                    ?: return@forEach
+                // Move the attempt's effective start forward by the time spent archived.
+                // The elapsed value therefore resumes exactly where it was paused.
+                val resumedStart = (now - pausedDurationMillis(streak, now)).coerceAtLeast(1L)
+                changed += dao.markActive(streakId, resumedStart)
             }
+            changed
         }
     }
 
@@ -123,3 +143,17 @@ class StreakRepository @Inject constructor(
 fun StreakModel.effectiveAttemptStartMillis(zoneId: ZoneId = ZoneId.systemDefault()): Long =
     currentAttemptStartedAtMillis.takeIf { it > 0 }
         ?: startDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+
+private fun pausedDurationMillis(
+    streak: StreakModel,
+    now: Long,
+    zoneId: ZoneId = ZoneId.systemDefault()
+): Long {
+    if (streak.currentAttemptStartedAtMillis <= 0) {
+        return currentDurationValue(streak, now, zoneId).millis
+    }
+    val pausedAt = streak.archivedAtMillis?.takeIf { it > 0 }
+        ?: streak.endDate?.atStartOfDay(zoneId)?.toInstant()?.toEpochMilli()
+        ?: now
+    return (pausedAt - streak.currentAttemptStartedAtMillis).coerceAtLeast(0L)
+}

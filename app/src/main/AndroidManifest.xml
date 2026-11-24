@@ -24,6 +24,9 @@
             android:name=".View.HomeScreens.EditStreakActivity"
             android:exported="false" />
         <activity
+            android:name=".View.HomeScreens.ArchiveActivity"
+            android:exported="false" />
+        <activity
             android:name=".View.HomeScreens.UrgePlanActivity"
             android:exported="false" />
         <activity
